@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Atmosphere — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-wind text-data-600 mr-2"></i>Observations Atmospheriques</h1>
+        <p class="text-sm text-ink-muted mt-1">Qualite de l'air et donnees atmospheriques</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Variable</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Valeur</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Unite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Qualite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Simule</th>
+</tr></thead>
+<tbody>
+{% for o in observations %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 text-ink-soft">{{ o.zone }}</td>
+<td class="px-4 py-3 font-medium text-ink">{{ o.get_variable_display }}</td>
+<td class="px-4 py-3 font-bold font-mono">{{ o.value }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ o.unit }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ o.observed_at|date:"d/m/Y" }}</td>
+<td class="px-4 py-3 text-xs text-ink-soft">{{ o.quality_flag }}</td>
+<td class="px-4 py-3">{% if o.is_simulated %}<span class="text-risk-vigil text-xs font-medium"><i class="fas fa-flask mr-1"></i>SIMULE</span>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-wind text-2xl mb-2 block text-ink-faint"></i>Aucune observation</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

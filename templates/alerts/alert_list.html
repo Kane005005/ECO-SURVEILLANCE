@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Alertes — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-bell text-risk-vigil mr-2"></i>Alertes</h1>
+        <p class="text-sm text-ink-muted mt-1">Notifications et alertes systeme</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Incident</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Canal</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Severite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Envoyee</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Message</th>
+</tr></thead>
+<tbody>
+{% for a in alerts %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 font-medium text-ink">{{ a.incident.title|truncatewords:5 }}</td>
+<td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium rounded-full bg-data-100 text-data-700">{{ a.get_channel_display }}</span></td>
+<td class="px-4 py-3">
+    {% if a.severity == 'CRITICAL' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ a.get_severity_display }}</span>
+    {% elif a.severity == 'HIGH' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ a.get_severity_display }}</span>
+    {% elif a.severity == 'MEDIUM' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ a.get_severity_display }}</span>
+    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ a.get_severity_display }}</span>
+    {% endif %}
+</td>
+<td class="px-4 py-3 text-xs text-ink-soft">{{ a.get_status_display }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ a.sent_at|date:"d/m/Y H:i"|default:"—" }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted truncate max-w-xs">{{ a.message|truncatewords:10 }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-bell-slash text-2xl mb-2 block text-ink-faint"></i>Aucune alerte</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

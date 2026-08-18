@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Stations — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold">Stations Environnementales</h1>
+        <p class="text-sm text-ink-muted mt-1">Reseau de capteurs IoT</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Code</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Nom</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Batterie</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Simule</th>
+</tr></thead>
+<tbody>
+{% for s in stations %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 font-mono text-sm"><a href="{% url 'sensors:station_detail' s.pk %}" class="text-data-600 hover:text-data-700 font-medium transition-colors">{{ s.code }}</a></td>
+<td class="px-4 py-3">{{ s.name }}</td>
+<td class="px-4 py-3 text-ink-soft">{{ s.zone|default:"—" }}</td>
+<td class="px-4 py-3">
+    {% if s.status == 'ACTIVE' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ s.get_status_display }}</span>
+    {% elif s.status == 'DEGRADED' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ s.get_status_display }}</span>
+    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ s.get_status_display }}</span>
+    {% endif %}
+</td>
+<td class="px-4 py-3">{{ s.battery_level }}%</td>
+<td class="px-4 py-3">{% if s.is_simulated %}<span class="text-risk-vigil text-xs font-medium"><i class="fas fa-flask mr-1"></i>SIMULE</span>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-broadcast-tower text-2xl mb-2 block text-ink-faint"></i>Aucune station</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

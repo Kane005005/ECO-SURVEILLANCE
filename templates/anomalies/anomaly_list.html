@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Anomalies — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-search text-satellite mr-2"></i>Anomalies Detectees</h1>
+        <p class="text-sm text-ink-muted mt-1">Resultats de detection automatique</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Type</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Severite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Score</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Confiance</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+</tr></thead>
+<tbody>
+{% for a in anomalies %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 font-medium text-ink">{{ a.get_anomaly_type_display }}</td>
+<td class="px-4 py-3 text-ink-soft">{{ a.zone }}</td>
+<td class="px-4 py-3">
+    {% if a.severity == 'CRITICAL' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ a.get_severity_display }}</span>
+    {% elif a.severity == 'HIGH' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ a.get_severity_display }}</span>
+    {% elif a.severity == 'MEDIUM' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ a.get_severity_display }}</span>
+    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ a.get_severity_display }}</span>
+    {% endif %}
+</td>
+<td class="px-4 py-3 font-bold font-mono">{{ a.score|floatformat:1 }}</td>
+<td class="px-4 py-3 text-ink-soft">{{ a.confidence|floatformat:0 }}%</td>
+<td class="px-4 py-3 text-xs text-ink-soft">{{ a.get_status_display }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ a.detected_at|date:"d/m/Y H:i" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-search text-2xl mb-2 block text-ink-faint"></i>Aucune anomalie</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

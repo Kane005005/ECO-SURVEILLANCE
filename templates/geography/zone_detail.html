@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ zone.name }} — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold">{{ zone.name }}</h1>
+        <p class="text-sm text-ink-muted mt-1"><i class="fas fa-map-marker-alt mr-1 text-territory-600"></i>{{ zone.get_zone_type_display }} — {{ zone.region|default:"Sans region" }}</p>
+    </div>
+    <div class="text-right">
+        <div class="text-3xl font-display font-bold {% if zone.current_iez >= 85 %}text-risk-normal{% elif zone.current_iez >= 65 %}text-risk-vigil{% elif zone.current_iez >= 40 %}text-risk-high{% else %}text-risk-critical{% endif %}">{{ zone.current_iez }}</div>
+        <div class="text-xs text-ink-muted font-medium">IEZ</div>
+    </div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-territory-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-ruler-combined text-territory-600 text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ zone.area_km2|default:"—" }} km2</div>
+        <div class="text-xs text-ink-muted">Superficie</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-data-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-users text-data-600 text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ zone.population|default:"—" }}</div>
+        <div class="text-xs text-ink-muted">Population</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-risk-vigil/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-signal text-risk-vigil text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ zone.get_status_display }}</div>
+        <div class="text-xs text-ink-muted">Statut</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-risk-high/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-shield-alt text-risk-high text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ zone.get_vulnerability_level_display }}</div>
+        <div class="text-xs text-ink-muted">Vulnerabilite</div>
+    </div>
+</div>
+{% if zone.latitude and zone.longitude %}
+<div id="zone-map" class="rounded-xl border border-surface-border shadow-card mb-8" style="height:300px;"></div>
+{% endif %}
+<a href="{% url 'geography:zone_list' %}" class="inline-flex items-center gap-2 bg-surface-soft text-ink-soft px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-border transition-colors">
+    <i class="fas fa-arrow-left text-xs"></i> Retour aux zones
+</a>
+{% endblock %}
+{% block extra_js %}
+{% if zone.latitude and zone.longitude %}
+<script>
+var m=L.map('zone-map').setView([{{ zone.latitude }},{{ zone.longitude }}],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM'}).addTo(m);
+L.marker([{{ zone.latitude }},{{ zone.longitude }}]).addTo(m).bindPopup('{{ zone.name }}');
+</script>
+{% endif %}
+{% endblock %}

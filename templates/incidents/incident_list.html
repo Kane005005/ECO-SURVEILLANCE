@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Incidents — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-exclamation-triangle text-risk-high mr-2"></i>Incidents</h1>
+        <p class="text-sm text-ink-muted mt-1">Suivi des incidents environnementaux</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Titre</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Type</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Severite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Risk Score</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+</tr></thead>
+<tbody>
+{% for i in incidents %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3"><a href="{% url 'incidents:incident_detail' i.pk %}" class="text-data-600 hover:text-data-700 font-medium transition-colors">{{ i.title }}</a></td>
+<td class="px-4 py-3 text-ink-soft">{{ i.get_incident_type_display }}</td>
+<td class="px-4 py-3 text-ink-soft">{{ i.zone }}</td>
+<td class="px-4 py-3">
+    {% if i.severity == 'CRITICAL' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ i.get_severity_display }}</span>
+    {% elif i.severity == 'HIGH' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ i.get_severity_display }}</span>
+    {% elif i.severity == 'MEDIUM' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ i.get_severity_display }}</span>
+    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ i.get_severity_display }}</span>
+    {% endif %}
+</td>
+<td class="px-4 py-3 text-xs text-ink-soft">{{ i.get_status_display }}</td>
+<td class="px-4 py-3 font-bold font-mono">{{ i.risk_score|floatformat:1 }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ i.detected_at|date:"d/m/Y H:i" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-exclamation-triangle text-2xl mb-2 block text-ink-faint"></i>Aucun incident</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Feux — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-fire text-risk-critical mr-2"></i>Detections de Feux</h1>
+        <p class="text-sm text-ink-muted mt-1">Donnees NASA FIRMS</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Lat</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Lng</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Satellite</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Confiance</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">FRP</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Simule</th>
+</tr></thead>
+<tbody>
+{% for f in fires %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 font-mono text-xs">{{ f.latitude|floatformat:2 }}</td>
+<td class="px-4 py-3 font-mono text-xs">{{ f.longitude|floatformat:2 }}</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ f.detected_at|date:"d/m/Y H:i" }}</td>
+<td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium rounded-full bg-satellite/10 text-satellite">{{ f.satellite }}</span></td>
+<td class="px-4 py-3 font-bold">{{ f.confidence }}</td>
+<td class="px-4 py-3">{{ f.frp|default:"—" }}</td>
+<td class="px-4 py-3">{% if f.is_simulated %}<span class="text-risk-vigil text-xs font-medium"><i class="fas fa-flask mr-1"></i>SIMULE</span>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-fire text-2xl mb-2 block text-ink-faint"></i>Aucune detection de feu</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

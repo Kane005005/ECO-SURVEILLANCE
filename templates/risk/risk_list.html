@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Risques — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-shield-alt text-risk-high mr-2"></i>Evaluations de Risques</h1>
+        <p class="text-sm text-ink-muted mt-1">Scoring et niveaux de risque par zone</p>
+    </div>
+</div>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
+<table class="w-full text-sm">
+<thead class="bg-surface-soft"><tr>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Type</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Score</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Confiance</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Niveau</th>
+<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+</tr></thead>
+<tbody>
+{% for r in assessments %}
+<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
+<td class="px-4 py-3 text-ink-soft">{{ r.zone }}</td>
+<td class="px-4 py-3 font-medium text-ink">{{ r.get_risk_type_display }}</td>
+<td class="px-4 py-3 font-bold font-mono">{{ r.risk_score|floatformat:1 }}</td>
+<td class="px-4 py-3 text-ink-soft">{{ r.confidence_score|floatformat:1 }}</td>
+<td class="px-4 py-3">
+    {% if r.level == 'RED' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ r.get_level_display }}</span>
+    {% elif r.level == 'ORANGE' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ r.get_level_display }}</span>
+    {% elif r.level == 'YELLOW' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ r.get_level_display }}</span>
+    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ r.get_level_display }}</span>
+    {% endif %}
+</td>
+<td class="px-4 py-3 text-xs text-ink-muted">{{ r.calculated_at|date:"d/m/Y H:i" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-shield-alt text-2xl mb-2 block text-ink-faint"></i>Aucune evaluation</td></tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

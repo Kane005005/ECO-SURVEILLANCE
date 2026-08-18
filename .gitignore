@@ -1,0 +1,12 @@
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+.env.*
+!.env.example
+*.log
+.git_backup/

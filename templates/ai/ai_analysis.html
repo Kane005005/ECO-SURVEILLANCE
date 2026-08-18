@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}IA — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-brain text-satellite mr-2"></i>Analyses IA</h1>
+        <p class="text-sm text-ink-muted mt-1">Resultats des modeles d'intelligence artificielle</p>
+    </div>
+</div>
+<div class="space-y-4">
+{% for a in analyses %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <span class="font-display font-semibold text-ink">{{ a.provider }}</span>
+            <span class="text-ink-faint">/</span>
+            <span class="text-sm text-ink-muted font-mono">{{ a.model }}</span>
+        </div>
+        <span class="text-xs text-ink-muted"><i class="fas fa-clock mr-1"></i>{{ a.created_at|date:"d/m/Y H:i" }}</span>
+    </div>
+    {% if a.incident %}
+    <div class="mb-3 inline-flex items-center gap-1.5 text-xs font-medium bg-risk-high/10 text-risk-high px-2 py-0.5 rounded-full">
+        <i class="fas fa-exclamation-triangle"></i> {{ a.incident.title }}
+    </div>
+    {% endif %}
+    <div class="bg-surface-soft p-4 rounded-xl border border-surface-border">
+        <pre class="whitespace-pre-wrap font-mono text-xs text-ink-soft">{{ a.output|pprint }}</pre>
+    </div>
+</div>
+{% empty %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-12 text-center">
+    <i class="fas fa-brain text-3xl text-ink-faint mb-3 block"></i>
+    <p class="text-ink-muted">Aucune analyse IA</p>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ECO-SURVEILLANCE MALI{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'territory-50': '#F0FDF4', 'territory-100': '#DCFCE7', 'territory-200': '#BBF7D0',
+                        'territory-300': '#86EFAC', 'territory-400': '#4ADE80', 'territory-500': '#22C55E',
+                        'territory-600': '#16A34A', 'territory-700': '#15803D', 'territory-800': '#166534',
+                        'territory-900': '#14532D', 'territory-950': '#052E16',
+                        'data-50': '#EFF6FF', 'data-100': '#DBEAFE', 'data-200': '#BFDBFE',
+                        'data-300': '#93C5FD', 'data-400': '#60A5FA', 'data-500': '#3B82F6',
+                        'data-600': '#2563EB', 'data-700': '#1D4ED8', 'data-800': '#1E40AF',
+                        'data-900': '#1E3A8A', 'data-950': '#172554',
+                        'surface-bg': '#F8FAFC', 'surface-card': '#FFFFFF', 'surface-soft': '#F1F5F9',
+                        'surface-border': '#E2E8F0',
+                        'ink': '#0F172A', 'ink-soft': '#334155', 'ink-muted': '#64748B', 'ink-faint': '#94A3B8',
+                        'risk-normal': '#22C55E', 'risk-vigil': '#EAB308', 'risk-high': '#F97316', 'risk-critical': '#DC2626',
+                        'satellite': '#8B5CF6',
+                    },
+                    fontFamily: {
+                        'display': ['"Space Grotesk"', 'sans-serif'],
+                        'sans': ['"Inter"', 'system-ui', 'sans-serif'],
+                        'mono': ['"JetBrains Mono"', 'monospace'],
+                    },
+                    backgroundImage: {
+                        'eco-mesh': 'radial-gradient(at 10% 20%, rgba(22,163,74,0.05) 0px, transparent 50%), radial-gradient(at 90% 10%, rgba(37,99,235,0.05) 0px, transparent 50%)',
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.03)',
+                        'card-hover': '0 12px 32px rgba(15,23,42,0.08)',
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        * { -webkit-font-smoothing: antialiased; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0F172A; }
+        .text-eco-gradient { background: linear-gradient(135deg, #15803D 0%, #2563EB 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .section-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #F1F5F9; } ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-surface-bg text-ink min-h-screen flex flex-col">
+
+    <!-- NAV -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-surface-bg/80 backdrop-blur-xl border-b border-surface-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'core:home' %}" class="flex items-center gap-3">
+                        <div class="relative w-9 h-9 flex items-center justify-center">
+                            <svg viewBox="0 0 40 40" class="w-full h-full">
+                                <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
+                                <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
+                                <path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                <circle cx="20" cy="20" r="3" fill="#2563EB"/>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col leading-none">
+                            <span class="font-display font-bold text-base tracking-tight">ECO-SURVEILLANCE</span>
+                            <span class="text-[10px] font-medium text-ink-muted tracking-widest">MALI &middot; MVP</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="{% url 'core:dashboard' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Dashboard</a>
+                    <a href="{% url 'core:map' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Carte</a>
+                    <a href="{% url 'geography:zone_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Zones</a>
+                    <a href="{% url 'sensors:station_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Stations</a>
+                    <a href="{% url 'incidents:incident_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Incidents</a>
+                    <a href="{% url 'fires:fire_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Feux</a>
+                    <a href="{% url 'anomalies:anomaly_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Anomalies</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    {% if DEMO_MODE %}
+                    <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                        <span class="w-2 h-2 rounded-full bg-risk-vigil animate-pulse"></span> Mode Demo
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'admin:index' %}" class="hidden md:inline-flex items-center gap-2 bg-territory-700 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-territory-800 transition-colors">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                    <button id="mobileBtn" class="lg:hidden p-2 text-ink-soft">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- DEMO BANNER -->
+    {% if DEMO_MODE %}
+    <div class="fixed top-16 left-0 right-0 z-40 bg-risk-vigil/10 border-b border-risk-vigil/30 text-risk-vigil text-center text-xs py-1.5 font-medium">
+        <i class="fas fa-flask mr-1"></i> MODE DEMO &mdash; Donnees simulees. Aucune donnee reelle.
+    </div>
+    {% endif %}
+
+    <!-- MESSAGES -->
+    {% if messages %}
+    <div class="fixed top-{% if DEMO_MODE %}24{% else %}16{% endif %} left-0 right-0 z-30 max-w-7xl mx-auto px-4 mt-2">
+        {% for message in messages %}
+        <div class="p-3 rounded-lg mb-2 text-sm flex items-center gap-2 shadow-card {% if 'success' in message.tags %}bg-risk-normal/10 border border-risk-normal/30 text-risk-normal{% elif 'error' in message.tags %}bg-risk-critical/10 border border-risk-critical/30 text-risk-critical{% else %}bg-data-50 border border-data-200 text-data-700{% endif %}">
+            {% if 'success' in message.tags %}<i class="fas fa-check-circle"></i>{% elif 'error' in message.tags %}<i class="fas fa-exclamation-circle"></i>{% else %}<i class="fas fa-info-circle"></i>{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CONTENT -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-surface-border bg-surface-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <svg viewBox="0 0 40 40" class="w-7 h-7"><circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/><circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/><path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" fill="none"/><circle cx="20" cy="20" r="3" fill="#2563EB"/></svg>
+                    <span class="font-display font-bold text-sm">ECO-SURVEILLANCE MALI</span>
+                </div>
+                <p class="text-xs text-ink-muted">Plateforme de surveillance environnementale &mdash; MVP</p>
+            </div>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

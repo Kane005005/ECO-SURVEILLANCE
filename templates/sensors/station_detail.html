@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ station.code }} — ECO-SURVEILLANCE{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-display font-bold">{{ station.name }}</h1>
+        <p class="text-sm text-ink-muted mt-1"><i class="fas fa-broadcast-tower mr-1 text-data-600"></i>{{ station.code }} — {{ station.zone|default:"Sans zone" }}</p>
+        {% if station.is_simulated %}<span class="inline-flex items-center gap-1 mt-2 bg-risk-vigil/10 text-risk-vigil text-xs px-2 py-0.5 rounded-full font-medium"><i class="fas fa-flask"></i> STATION SIMULEE</span>{% endif %}
+    </div>
+    <div>
+        {% if station.status == 'ACTIVE' %}<span class="px-3 py-1 text-sm font-medium rounded-full bg-risk-normal/10 text-risk-normal"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ station.get_status_display }}</span>
+        {% elif station.status == 'DEGRADED' %}<span class="px-3 py-1 text-sm font-medium rounded-full bg-risk-vigil/10 text-risk-vigil"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ station.get_status_display }}</span>
+        {% else %}<span class="px-3 py-1 text-sm font-medium rounded-full bg-risk-critical/10 text-risk-critical"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ station.get_status_display }}</span>
+        {% endif %}
+    </div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-territory-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-battery-three-quarters text-territory-600 text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ station.battery_level }}%</div>
+        <div class="text-xs text-ink-muted">Batterie</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-data-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-clock text-data-600 text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ station.last_seen_at|date:"d/m H:i"|default:"—" }}</div>
+        <div class="text-xs text-ink-muted">Derniere transmission</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-satellite/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-crosshairs text-satellite text-sm"></i></div>
+        <div class="text-xl font-display font-bold font-mono text-sm">{{ station.latitude|floatformat:3 }}, {{ station.longitude|floatformat:3 }}</div>
+        <div class="text-xs text-ink-muted">Position</div>
+    </div>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
+        <div class="w-8 h-8 rounded-lg bg-risk-high/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-microchip text-risk-high text-sm"></i></div>
+        <div class="text-xl font-display font-bold">{{ sensors.count }}</div>
+        <div class="text-xs text-ink-muted">Capteurs</div>
+    </div>
+</div>
+{% if sensors %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6 mb-8">
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-1.5 h-6 rounded-full bg-data-600"></div>
+        <h2 class="font-display font-semibold">Capteurs</h2>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+    {% for s in sensors %}
+    <div class="p-3 bg-surface-soft rounded-xl text-sm border border-surface-border">
+        <div class="font-semibold text-ink">{{ s.get_sensor_type_display }}</div>
+        <div class="text-xs text-ink-muted mt-0.5">{{ s.unit }} <span class="font-mono text-ink-faint">{{ s.code }}</span></div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% if readings %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden mb-8">
+    <div class="px-6 py-3 border-b border-surface-border">
+        <div class="flex items-center gap-2">
+            <div class="w-1.5 h-6 rounded-full bg-territory-600"></div>
+            <h2 class="font-display font-semibold">Dernieres mesures</h2>
+        </div>
+    </div>
+    <table class="w-full text-sm">
+    <thead class="bg-surface-soft"><tr>
+        <th class="px-4 py-2 text-left font-semibold text-ink-soft">Capteur</th>
+        <th class="px-4 py-2 text-left font-semibold text-ink-soft">Valeur</th>
+        <th class="px-4 py-2 text-left font-semibold text-ink-soft">Date</th>
+        <th class="px-4 py-2 text-left font-semibold text-ink-soft">Qualite</th>
+    </tr></thead>
+    <tbody>
+    {% for r in readings %}
+    <tr class="border-t border-surface-border">
+        <td class="px-4 py-2">{{ r.sensor.get_sensor_type_display }}</td>
+        <td class="px-4 py-2 font-bold">{{ r.value }}</td>
+        <td class="px-4 py-2 text-xs text-ink-muted">{{ r.recorded_at|date:"d/m/Y H:i" }}</td>
+        <td class="px-4 py-2 text-xs text-ink-soft">{{ r.quality }}</td>
+    </tr>
+    {% endfor %}
+    </tbody></table>
+</div>
+{% endif %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6 mb-6">
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-1.5 h-6 rounded-full bg-risk-vigil"></div>
+        <h2 class="font-display font-semibold">Simuler des mesures</h2>
+    </div>
+    <form method="post" action="{% url 'sensors:simulate' station.pk %}">
+        {% csrf_token %}
+        <div class="flex items-center gap-3">
+            <select name="scenario" class="border border-surface-border rounded-lg px-3 py-2 text-sm bg-surface-soft text-ink focus:outline-none focus:ring-2 focus:ring-territory-500/30 focus:border-territory-500">
+                <option value="NORMAL">Normal</option>
+                <option value="WATER_POLLUTION">Pollution eau</option>
+                <option value="DROUGHT">Secheresse</option>
+                <option value="HEAT">Canicule</option>
+                <option value="ATMOSPHERIC_ANOMALY">Anomalie atmospherique</option>
+                <option value="SENSOR_OFFLINE">Capteur hors ligne</option>
+            </select>
+            <button type="submit" class="bg-territory-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-territory-800 transition-colors">
+                <i class="fas fa-play mr-1.5"></i> Lancer
+            </button>
+        </div>
+    </form>
+</div>
+<a href="{% url 'sensors:station_list' %}" class="inline-flex items-center gap-2 bg-surface-soft text-ink-soft px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-border transition-colors">
+    <i class="fas fa-arrow-left text-xs"></i> Retour aux stations
+</a>
+{% endblock %}

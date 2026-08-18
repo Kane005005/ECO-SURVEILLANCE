@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Carte — ECO-SURVEILLANCE MALI{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-display font-bold">Carte Environnementale</h1>
+        <p class="text-sm text-ink-muted mt-1">Vue geospatiale du Mali</p>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="flex flex-wrap gap-2 mb-4">
+    <button onclick="tog('zones')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-zones" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.3);color:#15803D;">
+        <i class="fas fa-map-marker-alt"></i> Zones
+    </button>
+    <button onclick="tog('fires')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-fires" style="background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#DC2626;">
+        <i class="fas fa-fire"></i> Feux
+    </button>
+    <button onclick="tog('stations')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-stations" style="background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.3);color:#2563EB;">
+        <i class="fas fa-broadcast-tower"></i> Stations
+    </button>
+    <button onclick="tog('incidents')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-incidents" style="background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:#F97316;">
+        <i class="fas fa-exclamation-triangle"></i> Incidents
+    </button>
+</div>
+
+<!-- MAP -->
+<div id="map" class="rounded-xl border border-surface-border shadow-card" style="height:600px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const map=L.map('map').setView([17.5,-3.0],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM',maxZoom:18}).addTo(map);
+const vis={zones:true,fires:true,stations:true,incidents:true};
+const grps={};
+const iF=L.divIcon({html:'<div style="font-size:20px">🔥</div>',iconSize:[20,20],className:''});
+const iS=L.divIcon({html:'<div style="font-size:18px">📡</div>',iconSize:[18,18],className:''});
+const iI=L.divIcon({html:'<div style="font-size:18px">⚠</div>',iconSize:[18,18],className:''});
+
+function tog(n){
+    vis[n]=!vis[n];
+    const btn=document.getElementById('btn-'+n);
+    if(vis[n]){
+        btn.style.opacity='1';
+        if(grps[n])grps[n].addTo(map);
+    } else {
+        btn.style.opacity='0.4';
+        if(grps[n])map.removeLayer(grps[n]);
+    }
+}
+
+fetch('/api/map/').then(r=>r.json()).then(d=>{
+    const zg=L.layerGroup();
+    (d.zones||[]).forEach(z=>{
+        if(z.latitude&&z.longitude){
+            const c=z.status==='CRITICAL'?'#DC2626':z.status==='ALERT'?'#F97316':z.status==='MONITORING'?'#EAB308':'#15803D';
+            L.circleMarker([z.latitude,z.longitude],{radius:12,color:c,fillColor:c,fillOpacity:0.3,weight:2}).bindPopup('<div class="font-display font-semibold">'+z.name+'</div><div class="text-sm text-ink-muted">IEZ: '+z.current_iez+'</div><div class="text-xs text-ink-muted">'+z.status+'</div>').addTo(zg);
+        }
+    });
+    grps.zones=zg;grps.zones.addTo(map);
+
+    const fg=L.layerGroup();
+    (d.fires||[]).forEach(f=>{L.marker([f.latitude,f.longitude],{icon:iF}).bindPopup('<div class="font-display font-semibold">Feu</div><div class="text-sm text-ink-muted">Confiance: '+f.confidence+'</div>').addTo(fg);});
+    grps.fires=fg;
+
+    const sg=L.layerGroup();
+    (d.stations||[]).forEach(s=>{L.marker([s.latitude,s.longitude],{icon:iS}).bindPopup('<div class="font-display font-semibold">'+s.code+'</div><div class="text-sm">'+s.name+'</div><div class="text-xs text-ink-muted">'+s.status+'</div>').addTo(sg);});
+    grps.stations=sg;
+
+    const ig=L.layerGroup();
+    (d.incidents||[]).forEach(inc=>{
+        if(inc.latitude&&inc.longitude)L.marker([inc.latitude,inc.longitude],{icon:iI}).bindPopup('<div class="font-display font-semibold">'+inc.title+'</div><div class="text-xs text-ink-muted">'+inc.severity+'</div>').addTo(ig);
+    });
+    grps.incidents=ig;
+}).catch(()=>{});
+</script>
+{% endblock %}

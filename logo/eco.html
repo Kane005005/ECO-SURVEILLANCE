@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO-SURVEILLANCE MALI — Brand Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // === SIGNATURE — Territoire & Surveillance ===
+                        'territory-50':  '#F0FDF4',
+                        'territory-100': '#DCFCE7',
+                        'territory-200': '#BBF7D0',
+                        'territory-300': '#86EFAC',
+                        'territory-400': '#4ADE80',
+                        'territory-500': '#22C55E',
+                        'territory-600': '#16A34A',
+                        'territory-700': '#15803D',
+                        'territory-800': '#166534',
+                        'territory-900': '#14532D',
+                        'territory-950': '#052E16',
+
+                        // === DATA — Bleu Satellite & Ciel ===
+                        'data-50':  '#EFF6FF',
+                        'data-100': '#DBEAFE',
+                        'data-200': '#BFDBFE',
+                        'data-300': '#93C5FD',
+                        'data-400': '#60A5FA',
+                        'data-500': '#3B82F6',
+                        'data-600': '#2563EB',
+                        'data-700': '#1D4ED8',
+                        'data-800': '#1E40AF',
+                        'data-900': '#1E3A8A',
+                        'data-950': '#172554',
+
+                        // === SURFACES — Thème clair institutionnel ===
+                        'surface-bg':    '#F8FAFC', // Fond gris très clair
+                        'surface-card':  '#FFFFFF', // Cartes blanches
+                        'surface-soft':  '#F1F5F9',
+                        'surface-border':'#E2E8F0',
+
+                        // === ENCRE ===
+                        'ink':       '#0F172A',
+                        'ink-soft':  '#334155',
+                        'ink-muted': '#64748B',
+                        'ink-faint': '#94A3B8',
+
+                        // === RISQUES (Sémantique) ===
+                        'risk-normal':  '#22C55E', // 🟢 Normal
+                        'risk-vigil':   '#EAB308', // 🟡 Vigilance
+                        'risk-high':    '#F97316', // 🟠 Risque élevé
+                        'risk-critical':'#DC2626', // 🔴 Danger critique
+                        
+                        'satellite': '#8B5CF6', // Violet pour les sources satellites
+                    },
+                    fontFamily: {
+                        'display': ['"Space Grotesk"', 'sans-serif'],
+                        'sans': ['"Inter"', 'system-ui', 'sans-serif'],
+                        'mono': ['"JetBrains Mono"', 'monospace'],
+                    },
+                    backgroundImage: {
+                        'eco-mesh': 'radial-gradient(at 10% 20%, rgba(22, 163, 74, 0.05) 0px, transparent 50%), radial-gradient(at 90% 10%, rgba(37, 99, 235, 0.05) 0px, transparent 50%), radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.03) 0px, transparent 50%)',
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03)',
+                        'card-hover': '0 12px 32px rgba(15, 23, 42, 0.08)',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        :root {
+            --ink: #0F172A;
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+        }
+
+        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+
+        .text-eco-gradient {
+            background: linear-gradient(135deg, #15803D 0%, #2563EB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .preview-frame {
+            background: var(--card);
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .reveal-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .reveal-section.visible { opacity: 1; transform: translateY(0); }
+
+        .section-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* Grid background for map representation */
+        .map-grid {
+            background-color: #F1F5F9;
+            background-image: 
+                linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+</head>
+<body class="bg-surface-bg text-ink min-h-screen relative">
+
+    <!-- ============================================ -->
+    <!-- NAVIGATION FIXE                              -->
+    <!-- ============================================ -->
+    <nav id="mainNav" class="fixed top-0 left-0 right-0 z-50 bg-surface-bg/80 backdrop-blur-xl border-b border-surface-border transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="relative w-9 h-9 flex items-center justify-center">
+                        <svg viewBox="0 0 40 40" class="w-full h-full">
+                            <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
+                            <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
+                            <path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <circle cx="20" cy="20" r="3" fill="#2563EB"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col leading-none">
+                        <span class="font-display font-700 text-base tracking-tight">ECO-SURVEILLANCE</span>
+                        <span class="text-[10px] font-medium text-ink-muted tracking-widest">MALI · MVP</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="#identity" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Identité</a>
+                    <a href="#colors" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Couleurs</a>
+                    <a href="#typography" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Typo</a>
+                    <a href="#datasources" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Données</a>
+                    <a href="#components" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Composants</a>
+                    <a href="#patterns" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Patterns</a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                        <span class="w-2 h-2 rounded-full bg-risk-normal animate-pulse"></span> Système Opérationnel
+                    </span>
+                    <a href="#identity" class="hidden md:inline-flex items-center gap-2 bg-territory-700 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-territory-800 transition-colors">
+                        <span>Tableau de bord</span>
+                    </a>
+                    <button id="mobileMenuBtn" class="lg:hidden p-2 text-ink-soft">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ============================================ -->
+    <!-- HERO                                          -->
+    <!-- ============================================ -->
+    <header class="relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16 bg-eco-mesh">
+        <!-- Topographic lines effect -->
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M0 50 Q25 25 50 50 T100 50" stroke="%230F172A" fill="none"/%3E%3Cpath d="M0 70 Q25 45 50 70 T100 70" stroke="%230F172A" fill="none"/%3E%3Cpath d="M0 30 Q25 5 50 30 T100 30" stroke="%230F172A" fill="none"/%3E%3C/svg%3E');"></div>
+
+        <div class="relative z-10 text-center px-6 max-w-5xl mx-auto py-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-surface-border rounded-full text-xs font-medium text-ink-soft mb-8 shadow-sm">
+                <i class="fas fa-satellite-dish text-territory-600 text-xs"></i>
+                Plateforme Nationale · Spécifications v1.0
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-7xl font-display font-700 tracking-tight mb-6 leading-[1.05]">
+                <span class="text-ink">Surveillance</span><br>
+                <span class="text-eco-gradient">Environnementale du Mali</span>
+            </h1>
+
+            <p class="text-lg sm:text-xl text-ink-soft max-w-3xl mx-auto mb-10 leading-relaxed">
+                Transformer des données hétérogènes — satellitaires, climatiques, atmosphériques et terrain — en une représentation exploitable du territoire national.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 text-sm text-ink-muted">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-border rounded-lg shadow-sm">
+                    <i class="fas fa-database text-data-600 text-xs"></i> Sentinel-2 / 5P
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-border rounded-lg shadow-sm">
+                    <i class="fas fa-fire text-risk-high text-xs"></i> NASA FIRMS
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-border rounded-lg shadow-sm">
+                    <i class="fas fa-cloud-sun-rain text-data-600 text-xs"></i> NASA POWER
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-border rounded-lg shadow-sm">
+                    <i class="fas fa-brain text-satellite text-xs"></i> IA Groq
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+
+        <!-- ============================================ -->
+        <!-- SECTION 1 — IDENTITÉ                         -->
+        <!-- ============================================ -->
+        <section id="identity" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">01 — Identité</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Vision & <span class="text-eco-gradient">Concept</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Le système ne se limite pas à l'affichage de données : il met en œuvre un pipeline analytique complet allant des données brutes jusqu'à l'Indice Environnemental de Zone (IEZ).</p>
+
+            <div class="grid lg:grid-cols-3 gap-6">
+                <!-- Mission -->
+                <div class="preview-frame lg:col-span-2">
+                    <h3 class="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+                        <i class="fas fa-bullseye text-territory-600"></i> Thèse du projet
+                    </h3>
+                    <p class="text-ink-soft leading-relaxed mb-6">
+                        Il est possible, dès la phase MVP, de construire un système national de surveillance environnementale fonctionnel en s'appuyant principalement sur des données ouvertes, un moteur scientifique déterministe pour les calculs, et une IA strictement cantonnée à l'interprétation.
+                    </p>
+                    
+                    <div class="mt-8 p-6 bg-surface-bg rounded-xl border border-surface-border">
+                        <p class="text-xs font-mono text-ink-muted uppercase tracking-wider mb-4">Pipeline analytique</p>
+                        <div class="flex flex-wrap items-center gap-3 text-xs font-medium">
+                            <span class="px-3 py-1.5 bg-white border border-surface-border rounded-md shadow-sm">Données</span>
+                            <i class="fas fa-chevron-right text-ink-faint text-[10px]"></i>
+                            <span class="px-3 py-1.5 bg-white border border-surface-border rounded-md shadow-sm">Indicateurs</span>
+                            <i class="fas fa-chevron-right text-ink-faint text-[10px]"></i>
+                            <span class="px-3 py-1.5 bg-white border border-surface-border rounded-md shadow-sm">Anomalies</span>
+                            <i class="fas fa-chevron-right text-ink-faint text-[10px]"></i>
+                            <span class="px-3 py-1.5 bg-risk-high/10 text-risk-high border border-risk-high/20 rounded-md">Risques</span>
+                            <i class="fas fa-chevron-right text-ink-faint text-[10px]"></i>
+                            <span class="px-3 py-1.5 bg-risk-critical/10 text-risk-critical border border-risk-critical/20 rounded-md">Incidents</span>
+                            <i class="fas fa-chevron-right text-ink-faint text-[10px]"></i>
+                            <span class="px-3 py-1.5 bg-data-600 text-white rounded-md">IEZ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Principes -->
+                <div class="preview-frame">
+                    <h3 class="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+                        <i class="fas fa-shield-halved text-data-600"></i> Principes
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-territory-50 flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fas fa-check-double text-territory-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-sm">Déterminisme</h4>
+                                <p class="text-xs text-ink-muted">Calculs scientifiques séparés de l'IA.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-data-50 flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fas fa-globe text-data-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-sm">Open Data</h4>
+                                <p class="text-xs text-ink-muted">Sources gratuites et traçables.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-satellite/10 flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fas fa-eye text-satellite text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-sm">Transparence</h4>
+                                <p class="text-xs text-ink-muted">Distinction stricte entre réel et simulé.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- SECTION 2 — COULEURS & RISQUES               -->
+        <!-- ============================================ -->
+        <section id="colors" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">02 — Couleurs</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Palette & <span class="text-eco-gradient">Risques</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Le Vert Territoire pour l'environnement, le Bleu Données pour la surveillance satellitaire, et une échelle ordinale stricte pour les niveaux de risques.</p>
+
+            <!-- Primary Palette -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <div class="preview-frame">
+                    <h3 class="text-md font-semibold text-ink mb-4">Couleurs Primaires</h3>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div><div class="aspect-square rounded-lg bg-territory-600 mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Territory</p></div>
+                        <div><div class="aspect-square rounded-lg bg-territory-700 mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Dark</p></div>
+                        <div><div class="aspect-square rounded-lg bg-territory-400 mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Light</p></div>
+                        <div><div class="aspect-square rounded-lg bg-data-600 mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Data</p></div>
+                        <div><div class="aspect-square rounded-lg bg-data-700 mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Dark</p></div>
+                    </div>
+                </div>
+                <div class="preview-frame">
+                    <h3 class="text-md font-semibold text-ink mb-4">Surfaces & Encre</h3>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div><div class="aspect-square rounded-lg bg-surface-bg border border-surface-border mb-1"></div><p class="text-[10px] font-mono text-ink-muted">BG</p></div>
+                        <div><div class="aspect-square rounded-lg bg-white border border-surface-border mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Card</p></div>
+                        <div><div class="aspect-square rounded-lg bg-surface-soft mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Soft</p></div>
+                        <div><div class="aspect-square rounded-lg bg-ink mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Ink</p></div>
+                        <div><div class="aspect-square rounded-lg bg-ink-muted mb-1"></div><p class="text-[10px] font-mono text-ink-muted">Muted</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Scale -->
+            <div class="preview-frame">
+                <h3 class="text-md font-semibold text-ink mb-6 flex items-center gap-2">
+                    <i class="fas fa-triangle-exclamation text-risk-high"></i> Échelle des Risques Environnementaux
+                </h3>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Normal -->
+                    <div class="p-5 bg-risk-normal/5 border border-risk-normal/20 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-4 h-4 rounded-full bg-risk-normal"></span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-risk-normal">Niveau 1</span>
+                        </div>
+                        <h4 class="font-display font-600 text-territory-900">Normal</h4>
+                        <p class="text-xs text-ink-muted mt-1">Aucune anomalie significative détectée.</p>
+                        <code class="block mt-3 text-[10px] bg-white p-2 rounded border border-surface-border text-ink-muted">#22C55E</code>
+                    </div>
+                    <!-- Vigilance -->
+                    <div class="p-5 bg-risk-vigil/5 border border-risk-vigil/20 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-4 h-4 rounded-full bg-risk-vigil"></span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-risk-vigil">Niveau 2</span>
+                        </div>
+                        <h4 class="font-display font-600 text-ink">Vigilance</h4>
+                        <p class="text-xs text-ink-muted mt-1">Surveillance accrue requise.</p>
+                        <code class="block mt-3 text-[10px] bg-white p-2 rounded border border-surface-border text-ink-muted">#EAB308</code>
+                    </div>
+                    <!-- High Risk -->
+                    <div class="p-5 bg-risk-high/5 border border-risk-high/20 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-4 h-4 rounded-full bg-risk-high"></span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-risk-high">Niveau 3</span>
+                        </div>
+                        <h4 class="font-display font-600 text-ink">Risque élevé</h4>
+                        <p class="text-xs text-ink-muted mt-1">Anomalie confirmée, action conseillée.</p>
+                        <code class="block mt-3 text-[10px] bg-white p-2 rounded border border-surface-border text-ink-muted">#F97316</code>
+                    </div>
+                    <!-- Critical -->
+                    <div class="p-5 bg-risk-critical/5 border border-risk-critical/20 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-4 h-4 rounded-full bg-risk-critical"></span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-risk-critical">Niveau 4</span>
+                        </div>
+                        <h4 class="font-display font-600 text-ink">Danger critique</h4>
+                        <p class="text-xs text-ink-muted mt-1">Incident majeur, intervention immédiate.</p>
+                        <code class="block mt-3 text-[10px] bg-white p-2 rounded border border-surface-border text-ink-muted">#DC2626</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- SECTION 3 — TYPOGRAPHIE                      -->
+        <!-- ============================================ -->
+        <section id="typography" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">03 — Typographie</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Système <span class="text-eco-gradient">Typographique</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Space Grotesk pour l'interface technique, Inter pour la lisibilité des rapports, JetBrains Mono pour les données et coordonnées.</p>
+
+            <div class="grid lg:grid-cols-3 gap-6">
+                <div class="preview-frame lg:col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-md font-semibold text-ink">Space Grotesk — Display & UI</h3>
+                        <span class="text-xs text-ink-muted bg-surface-soft px-2 py-1 rounded-full">Principale</span>
+                    </div>
+                    <p class="text-5xl font-display font-700 text-ink mb-2">Aa</p>
+                    <p class="text-sm text-ink-muted mb-6">Weights: 300, 400, 500, 600, 700</p>
+                    <div class="space-y-3 border-t border-surface-border pt-4">
+                        <p class="text-3xl font-display font-700">Surveillance Environnementale</p>
+                        <p class="text-lg font-display font-500 text-ink-soft">Indice Environnemental de Zone (IEZ)</p>
+                        <p class="text-sm font-medium text-ink-muted">Détection d'anomalies satellitaires</p>
+                    </div>
+                </div>
+                <div class="preview-frame">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-md font-semibold text-ink">JetBrains Mono</h3>
+                        <span class="text-xs text-ink-muted bg-surface-soft px-2 py-1 rounded-full">Code</span>
+                    </div>
+                    <p class="text-4xl font-mono text-data-600 mb-2">Aa</p>
+                    <p class="text-sm text-ink-muted mb-6">Pour les données brutes</p>
+                    <div class="bg-ink p-4 rounded-lg text-xs font-mono text-territory-400">
+                        <p class="text-ink-faint">// Coordonnées GPS</p>
+                        <p class="text-white">lat: 12.6392° N</p>
+                        <p class="text-white">lng: -8.0029° W</p>
+                        <p class="text-risk-high mt-2">risk_level: HIGH</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- SECTION 4 — SOURCES DE DONNÉES               -->
+        <!-- ============================================ -->
+        <section id="datasources" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">04 — Données</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Sources & <span class="text-eco-gradient">Capteurs</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Architecture hybride combinant données satellitaires ouvertes, climatologies globales et stations terrain simulées.</p>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Sentinel-2 -->
+                <div class="preview-frame border-t-4 border-t-satellite">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-satellite/10 flex items-center justify-center"><i class="fas fa-satellite text-satellite"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">Sentinel-2</h3>
+                            <p class="text-xs text-ink-muted">Observation multispectrale</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">NDVI</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">NDWI</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">NBR</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Végétation, sols, couverture en eau. Revisite 5 jours, résolution 10m à 60m.</p>
+                </div>
+
+                <!-- NASA FIRMS -->
+                <div class="preview-frame border-t-4 border-t-risk-high">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-risk-high/10 flex items-center justify-center"><i class="fas fa-fire text-risk-high"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">NASA FIRMS</h3>
+                            <p class="text-xs text-ink-muted">Détection des feux actifs</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">MODIS</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">VIIRS</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Hotspots thermiques pour le suivi des incendies de brousse en temps quasi-réel.</p>
+                </div>
+
+                <!-- Sentinel-5P -->
+                <div class="preview-frame border-t-4 border-t-data-600">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-data-600/10 flex items-center justify-center"><i class="fas fa-smog text-data-600"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">Sentinel-5P</h3>
+                            <p class="text-xs text-ink-muted">Atmosphère (TROPOMI)</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">NO₂</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">SO₂</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">CO</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">O₃</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Indicateurs spatiaux régionaux de qualité de l'air et anomalies atmosphériques.</p>
+                </div>
+
+                <!-- Climat -->
+                <div class="preview-frame border-t-4 border-t-data-400">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-data-400/10 flex items-center justify-center"><i class="fas fa-cloud-sun-rain text-data-400"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">NASA POWER</h3>
+                            <p class="text-xs text-ink-muted">Données climatiques</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">Temp</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">Pluie</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">Vent</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Séries temporelles météorologiques pour l'analyse climatique des zones.</p>
+                </div>
+
+                <!-- Stations Simulées -->
+                <div class="preview-frame border-t-4 border-t-territory-600">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-territory-600/10 flex items-center justify-center"><i class="fas fa-tower-broadcast text-territory-600"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">Stations IoT</h3>
+                            <p class="text-xs text-ink-muted">Simulation terrain (MVP)</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-territory-50 text-territory-700 rounded text-[10px] font-mono">5 min</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Générateur déterministe simulant des capteurs physiques pour valider l'architecture.</p>
+                </div>
+
+                <!-- IA Groq -->
+                <div class="preview-frame border-t-4 border-t-ink">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-ink/5 flex items-center justify-center"><i class="fas fa-brain text-ink"></i></div>
+                        <div>
+                            <h3 class="font-display font-600">IA Groq</h3>
+                            <p class="text-xs text-ink-muted">Interprétation sémantique</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">LLM</span>
+                        <span class="px-2 py-0.5 bg-surface-soft text-ink-soft rounded text-[10px] font-mono">NLP</span>
+                    </div>
+                    <p class="text-xs text-ink-soft">Couche d'interprétation, corrélation des incidents et recommandations.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- SECTION 5 — COMPOSANTS UI                    -->
+        <!-- ============================================ -->
+        <section id="components" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">05 — Composants</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Bibliothèque <span class="text-eco-gradient">UI</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Boutons, badges d'incident, jauges de l'Indice Environnemental de Zone (IEZ) et alertes.</p>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="preview-frame space-y-6">
+                    <h3 class="text-md font-semibold text-ink">Boutons & Badges</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button class="px-4 py-2 bg-territory-700 text-white rounded-lg text-sm font-medium hover:bg-territory-800 transition-colors">Générer rapport</button>
+                        <button class="px-4 py-2 bg-white border border-surface-border text-ink rounded-lg text-sm font-medium hover:bg-surface-soft transition-colors">Voir carte</button>
+                        <button class="px-4 py-2 text-risk-critical hover:bg-risk-critical/10 rounded-lg text-sm font-medium transition-colors">Ignorer alerte</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-risk-normal/10 text-risk-normal rounded text-xs font-medium">Normal</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-risk-vigil/10 text-risk-vigil rounded text-xs font-medium">Vigilance</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-risk-high/10 text-risk-high rounded text-xs font-medium">Risque élevé</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-risk-critical/10 text-risk-critical rounded text-xs font-medium">Danger</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-satellite/10 text-satellite rounded text-xs font-medium">Satellite</span>
+                    </div>
+                </div>
+
+                <!-- IEZ Gauge -->
+                <div class="preview-frame">
+                    <h3 class="text-md font-semibold text-ink mb-4">Indice Environnemental de Zone (IEZ)</h3>
+                    <div class="flex items-center justify-around">
+                        <div class="text-center">
+                            <div class="relative w-24 h-24">
+                                <svg class="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                                    <circle cx="48" cy="48" r="40" stroke="#F1F5F9" stroke-width="8" fill="none"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#22C55E" stroke-width="8" fill="none" stroke-dasharray="251.2" stroke-dashoffset="50" stroke-linecap="round"/>
+                                </svg>
+                                <span class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span class="font-display font-700 text-2xl text-ink">80</span>
+                                    <span class="text-[9px] text-ink-muted uppercase">Sain</span>
+                                </span>
+                            </div>
+                            <p class="text-xs text-ink-muted mt-2">Zone Sud</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="relative w-24 h-24">
+                                <svg class="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                                    <circle cx="48" cy="48" r="40" stroke="#F1F5F9" stroke-width="8" fill="none"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#EAB308" stroke-width="8" fill="none" stroke-dasharray="251.2" stroke-dashoffset="125" stroke-linecap="round"/>
+                                </svg>
+                                <span class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span class="font-display font-700 text-2xl text-ink">50</span>
+                                    <span class="text-[9px] text-ink-muted uppercase">Vigil</span>
+                                </span>
+                            </div>
+                            <p class="text-xs text-ink-muted mt-2">Zone Centre</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="relative w-24 h-24">
+                                <svg class="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                                    <circle cx="48" cy="48" r="40" stroke="#F1F5F9" stroke-width="8" fill="none"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#DC2626" stroke-width="8" fill="none" stroke-dasharray="251.2" stroke-dashoffset="200" stroke-linecap="round"/>
+                                </svg>
+                                <span class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span class="font-display font-700 text-2xl text-ink">20</span>
+                                    <span class="text-[9px] text-ink-muted uppercase">Critique</span>
+                                </span>
+                            </div>
+                            <p class="text-xs text-ink-muted mt-2">Zone Nord</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert -->
+            <div class="mt-8 preview-frame space-y-4">
+                <h3 class="text-md font-semibold text-ink">Alertes Système</h3>
+                <div class="flex items-start gap-3 p-4 bg-risk-high/5 border-l-4 border-risk-high rounded-r-xl">
+                    <div class="w-8 h-8 rounded-full bg-risk-high/15 flex items-center justify-center flex-shrink-0"><i class="fas fa-fire text-risk-high text-sm"></i></div>
+                    <div>
+                        <p class="font-medium text-sm text-ink">Incident de feu de brousse détecté</p>
+                        <p class="text-xs text-ink-muted mt-0.5">Source: NASA FIRMS (VIIRS) · Région: Ségou · Confidence: 85%</p>
+                    </div>
+                    <button class="ml-auto text-xs font-medium text-data-600 hover:underline">Voir détails</button>
+                </div>
+                <div class="flex items-start gap-3 p-4 bg-data-600/5 border-l-4 border-data-600 rounded-r-xl">
+                    <div class="w-8 h-8 rounded-full bg-data-600/15 flex items-center justify-center flex-shrink-0"><i class="fas fa-water text-data-600 text-sm"></i></div>
+                    <div>
+                        <p class="font-medium text-sm text-ink">Baisse anormale du NDWI détectée</p>
+                        <p class="text-xs text-ink-muted mt-0.5">Source: Sentinel-2 · Région: Mopti · Écart statistique: -35%</p>
+                    </div>
+                    <button class="ml-auto text-xs font-medium text-data-600 hover:underline">Voir détails</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- SECTION 6 — PATTERNS & MAP                   -->
+        <!-- ============================================ -->
+        <section id="patterns" class="reveal-section py-20 lg:py-28">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="inline-block w-8 h-0.5 bg-territory-600"></span>
+                <span class="section-num text-territory-700 text-xs uppercase tracking-widest">06 — Patterns</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-display font-700 mb-4 tracking-tight">Carte & <span class="text-eco-gradient">Dashboard</span></h2>
+            <p class="text-ink-soft text-lg max-w-2xl mb-12">Interface de visualisation territoriale combinant données raster, hotspots et indices géospatiaux.</p>
+
+            <div class="preview-frame">
+                <h3 class="text-md font-semibold text-ink mb-4">Interface Cartographique (Leaflet/MapLibre)</h3>
+                <div class="map-grid rounded-xl h-96 relative overflow-hidden border border-surface-border">
+                    <!-- Simulated Map Markers -->
+                    <div class="absolute top-[20%] left-[30%]">
+                        <div class="relative">
+                            <div class="absolute inset-0 bg-risk-high/30 rounded-full animate-ping"></div>
+                            <div class="relative w-4 h-4 bg-risk-high rounded-full border-2 border-white shadow-md cursor-pointer"></div>
+                        </div>
+                    </div>
+                    <div class="absolute top-[60%] left-[45%]">
+                        <div class="relative">
+                            <div class="absolute inset-0 bg-risk-critical/30 rounded-full animate-ping"></div>
+                            <div class="relative w-4 h-4 bg-risk-critical rounded-full border-2 border-white shadow-md cursor-pointer"></div>
+                        </div>
+                    </div>
+                    <div class="absolute top-[40%] left-[70%]">
+                        <div class="w-4 h-4 bg-risk-normal rounded-full border-2 border-white shadow-md cursor-pointer"></div>
+                    </div>
+                    <div class="absolute top-[75%] left-[20%]">
+                        <div class="w-4 h-4 bg-risk-vigil rounded-full border-2 border-white shadow-md cursor-pointer"></div>
+                    </div>
+
+                    <!-- Map Popup -->
+                    <div class="absolute top-[15%] left-[35%] bg-white rounded-lg shadow-elevated p-4 w-64 border border-surface-border z-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-mono bg-risk-high/10 text-risk-high px-2 py-0.5 rounded">RISQUE ÉLEVÉ</span>
+                            <i class="fas fa-times text-ink-muted text-xs cursor-pointer"></i>
+                        </div>
+                        <h4 class="font-display font-600 text-sm">Feu actif - Ségou</h4>
+                        <div class="mt-2 space-y-1 text-[11px] text-ink-muted font-mono">
+                            <div class="flex justify-between"><span>Lat:</span><span>13.432° N</span></div>
+                            <div class="flex justify-between"><span>Lng:</span><span>-6.154° W</span></div>
+                            <div class="flex justify-between"><span>Source:</span><span>NASA FIRMS</span></div>
+                        </div>
+                        <button class="w-full mt-3 py-1.5 bg-ink text-white rounded text-xs font-medium">Analyser l'incident</button>
+                    </div>
+
+                    <!-- Map Controls -->
+                    <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2 flex flex-col gap-2 border border-surface-border">
+                        <button class="w-8 h-8 hover:bg-surface-soft rounded text-ink-soft"><i class="fas fa-plus text-xs"></i></button>
+                        <div class="w-full h-px bg-surface-border"></div>
+                        <button class="w-8 h-8 hover:bg-surface-soft rounded text-ink-soft"><i class="fas fa-minus text-xs"></i></button>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md p-3 rounded-lg shadow-md border border-surface-border">
+                        <p class="text-[10px] font-medium text-ink-muted uppercase tracking-wider mb-2">Niveaux de risque</p>
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-risk-normal"></span><span class="text-xs">Normal</span></div>
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-risk-vigil"></span><span class="text-xs">Vigilance</span></div>
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-risk-high"></span><span class="text-xs">Risque élevé</span></div>
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-risk-critical"></span><span class="text-xs">Danger critique</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-20 pt-12 border-t border-surface-border">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8">
+                        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/><circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/><path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" fill="none"/><circle cx="20" cy="20" r="3" fill="#2563EB"/></svg>
+                    </div>
+                    <span class="font-display font-700 text-base">ECO-SURVEILLANCE MALI</span>
+                </div>
+                <p class="text-xs text-ink-muted">Cahier de charges v1.0 — Prototype MVP</p>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        
+        // Reveal sections on scroll
+        const reveals = document.querySelectorAll('.reveal-section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
+        
+        reveals.forEach(el => observer.observe(el));
+    </script>
+
+</body>
+</html>
