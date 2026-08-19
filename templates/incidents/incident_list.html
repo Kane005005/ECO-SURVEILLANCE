@@ -1,43 +1,181 @@
 {% extends "base.html" %}
 {% block title %}Incidents — ECO-SURVEILLANCE{% endblock %}
+
 {% block content %}
-<div class="flex items-center justify-between mb-8">
+<div class="flex items-center justify-between mb-6">
     <div>
-        <h1 class="text-2xl font-display font-bold"><i class="fas fa-exclamation-triangle text-risk-high mr-2"></i>Incidents</h1>
+        <h1 class="text-2xl font-display font-bold"><i class="fas fa-triangle-exclamation text-risk-high mr-2"></i>Incidents</h1>
         <p class="text-sm text-ink-muted mt-1">Suivi des incidents environnementaux</p>
     </div>
+    <div class="flex items-center gap-2">
+        <span class="text-xs text-ink-muted" id="last-update">—</span>
+    </div>
 </div>
+
+<!-- STATS CARDS -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="w-8 h-8 rounded-lg bg-risk-critical/10 flex items-center justify-center">
+                <i class="fas fa-exclamation-circle text-risk-critical text-sm"></i>
+            </div>
+        </div>
+        <div class="text-2xl font-display font-bold text-risk-critical" id="inc-critical">0</div>
+        <div class="text-xs text-ink-muted">Critiques</div>
+    </div>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="w-8 h-8 rounded-lg bg-risk-high/10 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-risk-high text-sm"></i>
+            </div>
+        </div>
+        <div class="text-2xl font-display font-bold text-risk-high" id="inc-high">0</div>
+        <div class="text-xs text-ink-muted">Eleves</div>
+    </div>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="w-8 h-8 rounded-lg bg-risk-vigil/10 flex items-center justify-center">
+                <i class="fas fa-exclamation text-risk-vigil text-sm"></i>
+            </div>
+        </div>
+        <div class="text-2xl font-display font-bold text-risk-vigil" id="inc-medium">0</div>
+        <div class="text-xs text-ink-muted">Moyens</div>
+    </div>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="w-8 h-8 rounded-lg bg-risk-normal/10 flex items-center justify-center">
+                <i class="fas fa-info-circle text-risk-normal text-sm"></i>
+            </div>
+        </div>
+        <div class="text-2xl font-display font-bold text-risk-normal" id="inc-low">0</div>
+        <div class="text-xs text-ink-muted">Faibles</div>
+    </div>
+</div>
+
+<!-- FILTERS -->
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 mb-6">
+    <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-ink-soft">Rechercher</label>
+            <input type="text" id="search-incidents" placeholder="Titre..." class="px-3 py-1.5 text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" oninput="filterIncidents()">
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-ink-soft">Type</label>
+            <select id="filter-type" class="px-3 py-1.5 text-xs border border-surface-border rounded-lg bg-surface-soft" onchange="filterIncidents()">
+                <option value="">Tous</option>
+                <option value="WILDFIRE">Incendie</option>
+                <option value="DROUGHT">Secheresse</option>
+                <option value="WATER_POLLUTION">Pollution eau</option>
+                <option value="VEGETATION_DEGRADATION">Vegetation</option>
+                <option value="ATMOSPHERIC_ANOMALY">Atmosphere</option>
+                <option value="HEAT">Canicule</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-ink-soft">Severite</label>
+            <select id="filter-severity" class="px-3 py-1.5 text-xs border border-surface-border rounded-lg bg-surface-soft" onchange="filterIncidents()">
+                <option value="">Toutes</option>
+                <option value="CRITICAL">Critique</option>
+                <option value="HIGH">Eleve</option>
+                <option value="MEDIUM">Moyen</option>
+                <option value="LOW">Faible</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-ink-soft">Statut</label>
+            <select id="filter-status" class="px-3 py-1.5 text-xs border border-surface-border rounded-lg bg-surface-soft" onchange="filterIncidents()">
+                <option value="">Tous</option>
+                <option value="NEW">Nouveau</option>
+                <option value="INVESTIGATING">En cours</option>
+                <option value="CONFIRMED">Confirme</option>
+                <option value="RESOLVED">Resolu</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- INCIDENTS TABLE -->
 <div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
-<table class="w-full text-sm">
-<thead class="bg-surface-soft"><tr>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Titre</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Type</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Severite</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Risk Score</th>
-<th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
-</tr></thead>
-<tbody>
-{% for i in incidents %}
-<tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors">
-<td class="px-4 py-3"><a href="{% url 'incidents:incident_detail' i.pk %}" class="text-data-600 hover:text-data-700 font-medium transition-colors">{{ i.title }}</a></td>
-<td class="px-4 py-3 text-ink-soft">{{ i.get_incident_type_display }}</td>
-<td class="px-4 py-3 text-ink-soft">{{ i.zone }}</td>
-<td class="px-4 py-3">
-    {% if i.severity == 'CRITICAL' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ i.get_severity_display }}</span>
-    {% elif i.severity == 'HIGH' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ i.get_severity_display }}</span>
-    {% elif i.severity == 'MEDIUM' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ i.get_severity_display }}</span>
-    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ i.get_severity_display }}</span>
-    {% endif %}
-</td>
-<td class="px-4 py-3 text-xs text-ink-soft">{{ i.get_status_display }}</td>
-<td class="px-4 py-3 font-bold font-mono">{{ i.risk_score|floatformat:1 }}</td>
-<td class="px-4 py-3 text-xs text-ink-muted">{{ i.detected_at|date:"d/m/Y H:i" }}</td>
-</tr>
-{% empty %}
-<tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-exclamation-triangle text-2xl mb-2 block text-ink-faint"></i>Aucun incident</td></tr>
-{% endfor %}
-</tbody></table>
+    <table class="w-full text-sm" id="incidents-table">
+        <thead class="bg-surface-soft">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Titre</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Type</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Zone</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Severite</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Statut</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Risk Score</th>
+                <th class="px-4 py-3 text-left font-semibold text-ink-soft">Date</th>
+            </tr>
+        </thead>
+        <tbody id="incidents-tbody">
+            {% for i in incidents %}
+            <tr class="border-t border-surface-border hover:bg-surface-soft/50 transition-colors incident-row" data-type="{{ i.incident_type }}" data-severity="{{ i.severity }}" data-status="{{ i.status }}" data-title="{{ i.title|lower }}">
+                <td class="px-4 py-3">
+                    <a href="{% url 'incidents:incident_detail' i.pk %}" class="text-data-600 hover:text-data-700 font-medium transition-colors">{{ i.title }}</a>
+                </td>
+                <td class="px-4 py-3 text-ink-soft">{{ i.get_incident_type_display }}</td>
+                <td class="px-4 py-3 text-ink-soft">{{ i.zone }}</td>
+                <td class="px-4 py-3">
+                    {% if i.severity == 'CRITICAL' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-critical/10 text-risk-critical">{{ i.get_severity_display }}</span>
+                    {% elif i.severity == 'HIGH' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-high/10 text-risk-high">{{ i.get_severity_display }}</span>
+                    {% elif i.severity == 'MEDIUM' %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-vigil/10 text-risk-vigil">{{ i.get_severity_display }}</span>
+                    {% else %}<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-risk-normal/10 text-risk-normal">{{ i.get_severity_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-xs text-ink-soft">{{ i.get_status_display }}</td>
+                <td class="px-4 py-3 font-bold font-mono">{{ i.risk_score|floatformat:1 }}</td>
+                <td class="px-4 py-3 text-xs text-ink-muted">{{ i.detected_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="px-4 py-12 text-center text-ink-muted"><i class="fas fa-exclamation-triangle text-2xl mb-2 block text-ink-faint"></i>Aucun incident</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Update stats ──
+function updateStats(){
+    const rows=document.querySelectorAll('.incident-row');
+    const counts={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0};
+    rows.forEach(r=>{
+        if(r.style.display!=='none'){
+            const sev=r.dataset.severity;
+            counts[sev]=(counts[sev]||0)+1;
+        }
+    });
+    document.getElementById('inc-critical').textContent=counts.CRITICAL;
+    document.getElementById('inc-high').textContent=counts.HIGH;
+    document.getElementById('inc-medium').textContent=counts.MEDIUM;
+    document.getElementById('inc-low').textContent=counts.LOW;
+    document.getElementById('last-update').textContent='Mis a jour: '+new Date().toLocaleTimeString('fr-FR');
+}
+
+// ── Filter incidents ──
+function filterIncidents(){
+    const search=document.getElementById('search-incidents').value.toLowerCase();
+    const type=document.getElementById('filter-type').value;
+    const severity=document.getElementById('filter-severity').value;
+    const status=document.getElementById('filter-status').value;
+    
+    document.querySelectorAll('.incident-row').forEach(row=>{
+        let show=true;
+        
+        if(search&&!row.dataset.title.includes(search))show=false;
+        if(type&&row.dataset.type!==type)show=false;
+        if(severity&&row.dataset.severity!==severity)show=false;
+        if(status&&row.dataset.status!==status)show=false;
+        
+        row.style.display=show?'':'none';
+    });
+    
+    updateStats();
+}
+
+// Initial stats
+updateStats();
+</script>
 {% endblock %}

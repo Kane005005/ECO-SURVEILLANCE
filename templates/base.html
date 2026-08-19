@@ -42,6 +42,8 @@
                     boxShadow: {
                         'card': '0 1px 3px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.03)',
                         'card-hover': '0 12px 32px rgba(15,23,42,0.08)',
+                        'glow-green': '0 0 20px rgba(34,197,94,0.15)',
+                        'glow-red': '0 0 20px rgba(220,38,38,0.15)',
                     },
                 },
             },
@@ -52,94 +54,216 @@
         body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0F172A; }
         .text-eco-gradient { background: linear-gradient(135deg, #15803D 0%, #2563EB 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .section-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #F1F5F9; } ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        .sidebar-link { transition: all 0.15s ease; }
+        .sidebar-link:hover { background: rgba(22,163,74,0.08); color: #15803D; }
+        .sidebar-link.active { background: rgba(22,163,74,0.12); color: #15803D; border-right: 3px solid #15803D; }
+        .kpi-card { transition: all 0.2s ease; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(15,23,42,0.08); }
+        .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 4.7s; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .map-container { position: relative; }
+        .map-overlay { position: absolute; z-index: 1000; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-surface-bg text-ink min-h-screen flex flex-col">
+<body class="bg-surface-bg text-ink min-h-screen flex">
 
-    <!-- NAV -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-surface-bg/80 backdrop-blur-xl border-b border-surface-border">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <a href="{% url 'core:home' %}" class="flex items-center gap-3">
-                        <div class="relative w-9 h-9 flex items-center justify-center">
-                            <svg viewBox="0 0 40 40" class="w-full h-full">
-                                <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
-                                <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
-                                <path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                <circle cx="20" cy="20" r="3" fill="#2563EB"/>
-                            </svg>
-                        </div>
-                        <div class="flex flex-col leading-none">
-                            <span class="font-display font-bold text-base tracking-tight">ECO-SURVEILLANCE</span>
-                            <span class="text-[10px] font-medium text-ink-muted tracking-widest">MALI &middot; MVP</span>
-                        </div>
-                    </a>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed left-0 top-0 bottom-0 w-64 bg-surface-card border-r border-surface-border z-50 flex flex-col transition-transform duration-200">
+        <!-- Logo -->
+        <div class="p-4 border-b border-surface-border">
+            <a href="{% url 'core:home' %}" class="flex items-center gap-3">
+                <div class="relative w-10 h-10 flex items-center justify-center bg-territory-50 rounded-xl">
+                    <svg viewBox="0 0 40 40" class="w-8 h-8">
+                        <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
+                        <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
+                        <path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <circle cx="20" cy="20" r="3" fill="#2563EB"/>
+                    </svg>
                 </div>
-                <div class="hidden lg:flex items-center gap-1">
-                    <a href="{% url 'core:dashboard' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Dashboard</a>
-                    <a href="{% url 'core:map' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Carte</a>
-                    <a href="{% url 'geography:zone_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Zones</a>
-                    <a href="{% url 'sensors:station_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Stations</a>
-                    <a href="{% url 'incidents:incident_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Incidents</a>
-                    <a href="{% url 'fires:fire_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Feux</a>
-                    <a href="{% url 'anomalies:anomaly_list' %}" class="px-3 py-2 text-sm text-ink-soft hover:text-territory-700 transition-colors">Anomalies</a>
+                <div class="flex flex-col leading-none">
+                    <span class="font-display font-bold text-sm tracking-tight">ECO-SURVEILLANCE</span>
+                    <span class="text-[10px] font-medium text-ink-muted tracking-widest">MALI MVP</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    {% if DEMO_MODE %}
-                    <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-ink-muted">
-                        <span class="w-2 h-2 rounded-full bg-risk-vigil animate-pulse"></span> Mode Demo
-                    </span>
-                    {% endif %}
-                    <a href="{% url 'admin:index' %}" class="hidden md:inline-flex items-center gap-2 bg-territory-700 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-territory-800 transition-colors">
-                        <i class="fas fa-cog"></i> Admin
-                    </a>
-                    <button id="mobileBtn" class="lg:hidden p-2 text-ink-soft">
-                        <i class="fas fa-bars text-lg"></i>
+            </a>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-3">
+            <div class="px-3 mb-2">
+                <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Navigation</span>
+            </div>
+            <a href="{% url 'core:dashboard' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-chart-pie w-5 text-center text-sm"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'core:map' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-map-location-dot w-5 text-center text-sm"></i>
+                <span>Carte</span>
+            </a>
+            <a href="{% url 'geography:zone_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-layer-group w-5 text-center text-sm"></i>
+                <span>Zones</span>
+            </a>
+
+            <div class="px-3 mt-4 mb-2">
+                <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Surveillance</span>
+            </div>
+            <a href="{% url 'fires:fire_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-fire w-5 text-center text-sm text-risk-critical"></i>
+                <span>Feux</span>
+                <span id="nav-fire-count" class="ml-auto text-[10px] font-bold bg-risk-critical/10 text-risk-critical px-2 py-0.5 rounded-full hidden">0</span>
+            </a>
+            <a href="{% url 'incidents:incident_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-triangle-exclamation w-5 text-center text-sm text-risk-high"></i>
+                <span>Incidents</span>
+                <span id="nav-incident-count" class="ml-auto text-[10px] font-bold bg-risk-high/10 text-risk-high px-2 py-0.5 rounded-full hidden">0</span>
+            </a>
+            <a href="{% url 'anomalies:anomaly_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-magnifying-glass w-5 text-center text-sm text-satellite"></i>
+                <span>Anomalies</span>
+            </a>
+
+            <div class="px-3 mt-4 mb-2">
+                <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Infrastructure</span>
+            </div>
+            <a href="{% url 'sensors:station_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-tower-broadcast w-5 text-center text-sm text-data-600"></i>
+                <span>Stations</span>
+            </a>
+        </nav>
+
+        <!-- Bottom -->
+        <div class="p-4 border-t border-surface-border">
+            {% if DEMO_MODE %}
+            <div class="flex items-center gap-2 text-xs text-risk-vigil bg-risk-vigil/10 rounded-lg px-3 py-2 mb-3">
+                <span class="w-2 h-2 rounded-full bg-risk-vigil pulse-dot"></span>
+                <span class="font-medium">Mode Demo</span>
+            </div>
+            {% endif %}
+            <a href="{% url 'admin:index' %}" class="flex items-center gap-2 text-xs text-ink-muted hover:text-territory-700 transition-colors">
+                <i class="fas fa-cog"></i>
+                <span>Administration</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 ml-64">
+        <!-- TOP BAR -->
+        <header class="fixed top-0 left-64 right-0 h-14 bg-surface-bg/80 backdrop-blur-xl border-b border-surface-border z-40 flex items-center justify-between px-6">
+            <div class="flex items-center gap-4">
+                <button id="mobileBtn" class="lg:hidden p-2 text-ink-soft">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <div id="page-title" class="font-display font-semibold text-sm"></div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-xs text-ink-muted">
+                    <span class="w-2 h-2 rounded-full bg-risk-normal pulse-dot"></span>
+                    <span id="connection-status">En ligne</span>
+                </div>
+                <div class="text-xs text-ink-muted" id="current-time"></div>
+                <!-- Notifications bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="p-2 text-ink-muted hover:text-ink transition-colors relative">
+                        <i class="fas fa-bell text-sm"></i>
+                        <span id="notif-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-risk-critical text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
                     </button>
+                    <div id="notif-dropdown" class="hidden absolute right-0 top-10 w-80 bg-surface-card rounded-xl border border-surface-border shadow-card-hover z-50 overflow-hidden">
+                        <div class="p-3 border-b border-surface-border flex items-center justify-between">
+                            <span class="text-sm font-semibold">Notifications</span>
+                            <button onclick="clearNotifications()" class="text-xs text-ink-muted hover:text-ink">Tout marquer lu</button>
+                        </div>
+                        <div id="notif-list" class="max-h-64 overflow-y-auto">
+                            <div class="p-4 text-center text-sm text-ink-muted">Aucune notification</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <!-- DEMO BANNER -->
-    {% if DEMO_MODE %}
-    <div class="fixed top-16 left-0 right-0 z-40 bg-risk-vigil/10 border-b border-risk-vigil/30 text-risk-vigil text-center text-xs py-1.5 font-medium">
-        <i class="fas fa-flask mr-1"></i> MODE DEMO &mdash; Donnees simulees. Aucune donnee reelle.
-    </div>
-    {% endif %}
-
-    <!-- MESSAGES -->
-    {% if messages %}
-    <div class="fixed top-{% if DEMO_MODE %}24{% else %}16{% endif %} left-0 right-0 z-30 max-w-7xl mx-auto px-4 mt-2">
-        {% for message in messages %}
-        <div class="p-3 rounded-lg mb-2 text-sm flex items-center gap-2 shadow-card {% if 'success' in message.tags %}bg-risk-normal/10 border border-risk-normal/30 text-risk-normal{% elif 'error' in message.tags %}bg-risk-critical/10 border border-risk-critical/30 text-risk-critical{% else %}bg-data-50 border border-data-200 text-data-700{% endif %}">
-            {% if 'success' in message.tags %}<i class="fas fa-check-circle"></i>{% elif 'error' in message.tags %}<i class="fas fa-exclamation-circle"></i>{% else %}<i class="fas fa-info-circle"></i>{% endif %}
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- CONTENT -->
-    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12 w-full">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="border-t border-surface-border bg-surface-bg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <svg viewBox="0 0 40 40" class="w-7 h-7"><circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/><circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/><path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" fill="none"/><circle cx="20" cy="20" r="3" fill="#2563EB"/></svg>
-                    <span class="font-display font-bold text-sm">ECO-SURVEILLANCE MALI</span>
-                </div>
-                <p class="text-xs text-ink-muted">Plateforme de surveillance environnementale &mdash; MVP</p>
+        <!-- PAGE CONTENT -->
+        <main class="pt-14 min-h-screen">
+            <div class="p-6">
+                {% block content %}{% endblock %}
             </div>
-        </div>
-    </footer>
+        </main>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <script>
+    // ── Clock ──
+    function updateClock(){
+        const now=new Date();
+        document.getElementById('current-time').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+    setInterval(updateClock,1000);
+    updateClock();
+
+    // ── Notifications ──
+    let notifications=[];
+    function toggleNotifications(){
+        document.getElementById('notif-dropdown').classList.toggle('hidden');
+    }
+    function clearNotifications(){
+        notifications=[];
+        document.getElementById('notif-list').innerHTML='<div class="p-4 text-center text-sm text-ink-muted">Aucune notification</div>';
+        document.getElementById('notif-badge').classList.add('hidden');
+    }
+    function addNotification(title,body,type='info'){
+        notifications.unshift({title,body,type,time:new Date()});
+        const badge=document.getElementById('notif-badge');
+        badge.textContent=notifications.length;
+        badge.classList.remove('hidden');
+        renderNotifications();
+        showToast(title,type);
+    }
+    function renderNotifications(){
+        const el=document.getElementById('notif-list');
+        if(!notifications.length){el.innerHTML='<div class="p-4 text-center text-sm text-ink-muted">Aucune notification</div>';return;}
+        el.innerHTML=notifications.slice(0,10).map(n=>{
+            const icons={critical:'fa-exclamation-circle text-risk-critical',high:'fa-exclamation-triangle text-risk-high',info:'fa-info-circle text-data-600',success:'fa-check-circle text-risk-normal'};
+            return '<div class="p-3 border-b border-surface-border hover:bg-surface-soft cursor-pointer"><div class="flex items-start gap-2"><i class="fas '+(icons[n.type]||icons.info)+' mt-0.5"></i><div><div class="text-sm font-medium">'+n.title+'</div><div class="text-xs text-ink-muted mt-0.5">'+n.body+'</div></div></div></div>';
+        }).join('');
+    }
+    function showToast(title,type='info'){
+        const container=document.getElementById('toast-container');
+        const colors={critical:'bg-risk-critical text-white',high:'bg-risk-high text-white',info:'bg-data-600 text-white',success:'bg-risk-normal text-white'};
+        const toast=document.createElement('div');
+        toast.className='toast px-4 py-3 rounded-lg shadow-card-hover text-sm font-medium flex items-center gap-2 '+(colors[type]||colors.info);
+        toast.innerHTML='<i class="fas fa-bell"></i>'+title;
+        container.appendChild(toast);
+        setTimeout(()=>toast.remove(),5000);
+    }
+
+    // ── Auto-refresh notifications ──
+    function checkAlerts(){
+        fetch('/api/dashboard/').then(r=>r.json()).then(d=>{
+            if(d.unread_alerts>0){
+                document.getElementById('notif-badge').textContent=d.unread_alerts;
+                document.getElementById('notif-badge').classList.remove('hidden');
+            }
+        }).catch(()=>{});
+    }
+    setInterval(checkAlerts,60000);
+
+    // ── Sidebar active link ──
+    document.querySelectorAll('.sidebar-link').forEach(link=>{
+        if(window.location.pathname===link.getAttribute('href')){
+            link.classList.add('active');
+        }
+    });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

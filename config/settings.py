@@ -145,22 +145,63 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
+# ── Cache (Redis) ────────────────────────────────────────
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 3600,
+        "OPTIONS": {
+            "db": 1,
+        },
+    }
+}
+
 # ── API Keys (all optional) ──────────────────────────────
+# NASA FIRMS
 FIRMS_MAP_KEY = config("FIRMS_MAP_KEY", default="")
-NASA_POWER_BASE_URL = config("NASA_POWER_BASE_URL", default="https://power.larc.nasa.gov/api")
+FIRMS_SOURCE = config("FIRMS_SOURCE", default="VIIRS")
+
+# NASA POWER
+NASA_POWER_BASE_URL = config("NASA_POWER_BASE_URL", default="https://power.larc.nasa.gov/api/temporal")
+
+# CHIRPS
+CHIRPS_BASE_URL = config("CHIRPS_BASE_URL", default="https://data.chc.ucsb.edu/products/CHIRPS-2.0")
+
+# Copernicus Data Space Ecosystem (Sentinel-2, Sentinel-5P)
+CDSE_CLIENT_ID = config("CDSE_CLIENT_ID", default="")
+CDSE_CLIENT_SECRET = config("CDSE_CLIENT_SECRET", default="")
+
+# Legacy Copernicus keys (deprecated, use CDSE_*)
+COPERNICUS_CLIENT_ID = config("COPERNICUS_CLIENT_ID", default=CDSE_CLIENT_ID)
+COPERNICUS_CLIENT_SECRET = config("COPERNICUS_CLIENT_SECRET", default=CDSE_CLIENT_SECRET)
+
+# ERA5 (out of MVP)
 ERA5_CDS_URL = config("ERA5_CDS_URL", default="https://cds.climate.copernicus.eu/api/v2")
 ERA5_CDS_KEY = config("ERA5_CDS_KEY", default="")
-CHIRPS_BASE_URL = config("CHIRPS_BASE_URL", default="https://chc-ucsb.github.io/chirps-data")
+
+# OpenAQ (air quality)
 OPENAQ_API_KEY = config("OPENAQ_API_KEY", default="")
-OPENAQ_BASE_URL = config("OPENAQ_BASE_URL", default="https://api.openaq.org/v2")
-COPERNICUS_CLIENT_ID = config("COPERNICUS_CLIENT_ID", default="")
-COPERNICUS_CLIENT_SECRET = config("COPERNICUS_CLIENT_SECRET", default="")
+OPENAQ_BASE_URL = config("OPENAQ_BASE_URL", default="https://api.openaq.org/v3")
+
+# Google Earth Engine (out of MVP)
 GEE_PROJECT = config("GEE_PROJECT", default="")
 
 # ── AI ────────────────────────────────────────────────────
-AI_PROVIDER = config("AI_PROVIDER", default="groq")
+AI_PROVIDER = config("AI_PROVIDER", default="openai_compat")
 GROQ_API_KEY = config("GROQ_API_KEY", default="")
 GROQ_MODEL = config("GROQ_MODEL", default="llama-3.3-70b-versatile")
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+OPENAI_MODEL = config("OPENAI_MODEL", default="gpt-4o-mini")
+OPENAI_BASE_URL = config("OPENAI_BASE_URL", default="https://api.openai.com/v1")
+
+# ── AWS (for Landsat S3 Requester Pays) ──────────────────
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
+AWS_REGION = config("AWS_REGION", default="us-west-2")
+
+# ── OpenAQ (air quality) ────────────────────────────────
+OPENAQ_API_KEY = config("OPENAQ_API_KEY", default="")
 
 # ── Demo Mode ────────────────────────────────────────────
 DEMO_MODE = config("DEMO_MODE", default="1", cast=int)

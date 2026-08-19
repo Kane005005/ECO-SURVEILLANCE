@@ -1,79 +1,610 @@
 {% extends "base.html" %}
-{% block title %}Carte — ECO-SURVEILLANCE MALI{% endblock %}
+{% block title %}Carte interactive — ECO-SURVEILLANCE MALI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+    .filter-panel{transition:all .2s ease}
+    .filter-panel.collapsed{transform:translateX(-100%);opacity:0;pointer-events:none}
+    .filter-panel.expanded{transform:translateX(0);opacity:1}
+    .stats-panel{transition:all .2s ease}
+    .stats-panel.collapsed{transform:translateX(100%);opacity:0;pointer-events:none}
+    .stats-panel.expanded{transform:translateX(0);opacity:1}
+    .layer-btn{transition:all .15s ease}
+    .layer-btn:hover{transform:scale(1.05)}
+    .layer-btn.active{box-shadow:0 0 0 2px rgba(255,255,255,0.8),0 0 0 4px currentColor}
+    .pulse-dot{animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .map-popup{font-family:'Inter',sans-serif}
+    .map-popup .popup-title{font-weight:600;font-size:14px;margin-bottom:4px}
+    .map-popup .popup-row{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#64748b}
+    .map-popup .popup-badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:600}
+    .leaflet-container{background:#0F172A}
+    .cluster-small{background-color:rgba(34,197,94,0.3)}
+    .cluster-medium{background-color:rgba(234,179,8,0.3)}
+    .cluster-large{background-color:rgba(220,38,38,0.3)}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
+<!-- HEADER -->
+<div class="flex items-center justify-between mb-4">
     <div>
         <h1 class="text-2xl font-display font-bold">Carte Environnementale</h1>
-        <p class="text-sm text-ink-muted mt-1">Vue geospatiale du Mali</p>
+        <p class="text-sm text-ink-muted mt-1" id="map-status">Chargement des donnees...</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="text-xs text-ink-muted" id="last-update">—</span>
+        <button onclick="toggleAutoRefresh()" id="btn-auto-refresh" class="px-3 py-1.5 text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors">
+            <i class="fas fa-sync-alt mr-1"></i> Auto-refresh
+        </button>
+        <button onclick="refreshMap()" class="px-3 py-1.5 text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors">
+            <i class="fas fa-refresh"></i>
+        </button>
     </div>
 </div>
 
-<!-- LEGEND -->
-<div class="flex flex-wrap gap-2 mb-4">
-    <button onclick="tog('zones')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-zones" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.3);color:#15803D;">
-        <i class="fas fa-map-marker-alt"></i> Zones
-    </button>
-    <button onclick="tog('fires')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-fires" style="background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#DC2626;">
-        <i class="fas fa-fire"></i> Feux
-    </button>
-    <button onclick="tog('stations')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-stations" style="background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.3);color:#2563EB;">
-        <i class="fas fa-broadcast-tower"></i> Stations
-    </button>
-    <button onclick="tog('incidents')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors" id="btn-incidents" style="background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:#F97316;">
-        <i class="fas fa-exclamation-triangle"></i> Incidents
-    </button>
-</div>
+<!-- MAP CONTAINER -->
+<div class="flex gap-3 relative" style="height:calc(100vh - 220px);min-height:500px">
 
-<!-- MAP -->
-<div id="map" class="rounded-xl border border-surface-border shadow-card" style="height:600px;"></div>
+    <!-- LEFT FILTER PANEL -->
+    <div id="filter-panel" class="filter-panel expanded absolute left-0 top-0 z-20 w-72 bg-surface-card rounded-xl border border-surface-border shadow-card p-4 overflow-y-auto" style="max-height:100%">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display font-semibold text-sm flex items-center gap-2">
+                <i class="fas fa-sliders-h text-territory-600"></i> Filtres
+            </h3>
+            <button onclick="toggleFilterPanel()" class="text-ink-muted hover:text-ink text-xs"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Recherche zone -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-1.5 block">Rechercher zone</label>
+            <div class="relative">
+                <input type="text" id="search-zone" placeholder="Nom de zone..." class="w-full pl-8 pr-3 py-2 text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500 focus:border-transparent" oninput="filterZonesByName(this.value)">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint text-xs"></i>
+            </div>
+        </div>
+
+        <!-- Couches -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-2 block">Couches</label>
+            <div class="space-y-1.5">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-zones" checked onchange="toggleLayer('zones')" class="w-4 h-4 rounded border-surface-border text-territory-600 focus:ring-territory-500">
+                    <span class="w-3 h-3 rounded-full bg-risk-normal"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Zones (IEZ)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-fires" checked onchange="toggleLayer('fires')" class="w-4 h-4 rounded border-surface-border text-risk-critical focus:ring-risk-critical">
+                    <span class="w-3 h-3 rounded-full bg-risk-critical"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Feux FIRMS</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-stations" checked onchange="toggleLayer('stations')" class="w-4 h-4 rounded border-surface-border text-data-600 focus:ring-data-600">
+                    <span class="w-3 h-3 rounded-full bg-data-600"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Stations</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-incidents" checked onchange="toggleLayer('incidents')" class="w-4 h-4 rounded border-surface-border text-risk-high focus:ring-risk-high">
+                    <span class="w-3 h-3 rounded-full bg-risk-high"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Incidents</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-anomalies" checked onchange="toggleLayer('anomalies')" class="w-4 h-4 rounded border-surface-border text-satellite focus:ring-satellite">
+                    <span class="w-3 h-3 rounded-full bg-satellite"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Anomalies</span>
+                </label>
+                <div class="border-t border-surface-border my-2"></div>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-heatmap" onchange="toggleLayer('heatmap')" class="w-4 h-4 rounded border-surface-border text-orange-500 focus:ring-orange-500">
+                    <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Heatmap feux</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Filtre severite -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-2 block">Severite</label>
+            <div class="flex flex-wrap gap-1.5" id="severity-filters">
+                <button onclick="toggleSeverity('CRITICAL')" class="severity-btn px-2.5 py-1 text-[10px] font-medium rounded-lg border border-risk-critical/30 bg-risk-critical/10 text-risk-critical transition-opacity" data-sev="CRITICAL">Critique</button>
+                <button onclick="toggleSeverity('HIGH')" class="severity-btn px-2.5 py-1 text-[10px] font-medium rounded-lg border border-risk-high/30 bg-risk-high/10 text-risk-high transition-opacity" data-sev="HIGH">Eleve</button>
+                <button onclick="toggleSeverity('MEDIUM')" class="severity-btn px-2.5 py-1 text-[10px] font-medium rounded-lg border border-risk-vigil/30 bg-risk-vigil/10 text-risk-vigil transition-opacity" data-sev="MEDIUM">Moyen</button>
+                <button onclick="toggleSeverity('LOW')" class="severity-btn px-2.5 py-1 text-[10px] font-medium rounded-lg border border-risk-normal/30 bg-risk-normal/10 text-risk-normal transition-opacity" data-sev="LOW">Faible</button>
+            </div>
+        </div>
+
+        <!-- Filtre type incident -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-1.5 block">Type incident</label>
+            <select id="filter-incident-type" class="w-full px-3 py-2 text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
+                <option value="">Tous</option>
+                <option value="WILDFIRE">Incendie</option>
+                <option value="DROUGHT">Secheresse</option>
+                <option value="WATER_POLLUTION">Pollution eau</option>
+                <option value="VEGETATION_DEGRADATION">Vegetation</option>
+                <option value="ATMOSPHERIC_ANOMALY">Atmosphere</option>
+                <option value="HEAT">Canicule</option>
+                <option value="WATER_STRESS">Stress hydrique</option>
+            </select>
+        </div>
+
+        <!-- Filtre confiance feux -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-1.5 block">Confiance feux</label>
+            <select id="filter-fire-confidence" class="w-full px-3 py-2 text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
+                <option value="">Toutes</option>
+                <option value="high">Haute</option>
+                <option value="nominal">Moyenne</option>
+                <option value="low">Basse</option>
+            </select>
+        </div>
+
+        <!-- Filtre zones par type -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-1.5 block">Type zone</label>
+            <select id="filter-zone-type" class="w-full px-3 py-2 text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
+                <option value="">Toutes</option>
+                <option value="URBAN">Urbaine</option>
+                <option value="FOREST">Foret</option>
+                <option value="WETLAND">Zone humide</option>
+                <option value="AGRICULTURAL">Agricole</option>
+                <option value="SAVANNAH">Savane</option>
+                <option value="DESERT">Desert</option>
+                <option value="RIVER">Riviere</option>
+                <option value="LAKE">Lac</option>
+            </select>
+        </div>
+
+        <button onclick="resetFilters()" class="w-full py-2 text-xs font-medium rounded-lg bg-surface-soft text-ink-soft hover:bg-surface-border border border-surface-border transition-colors">
+            <i class="fas fa-undo mr-1"></i> Reinitialiser
+        </button>
+    </div>
+
+    <!-- MAP -->
+    <div id="map" class="flex-1 rounded-xl border border-surface-border shadow-card z-10"></div>
+
+    <!-- RIGHT STATS PANEL -->
+    <div id="stats-panel" class="stats-panel expanded absolute right-0 top-0 z-20 w-72 bg-surface-card rounded-xl border border-surface-border shadow-card p-4 overflow-y-auto" style="max-height:100%">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display font-semibold text-sm flex items-center gap-2">
+                <i class="fas fa-chart-bar text-data-600"></i> Statistiques
+            </h3>
+            <button onclick="toggleStatsPanel()" class="text-ink-muted hover:text-ink text-xs"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Compteurs live -->
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="bg-surface-soft rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-territory-700" id="stat-zones">0</div>
+                <div class="text-[10px] text-ink-muted">Zones</div>
+            </div>
+            <div class="bg-surface-soft rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-risk-critical" id="stat-fires">0</div>
+                <div class="text-[10px] text-ink-muted">Feux</div>
+            </div>
+            <div class="bg-surface-soft rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-risk-high" id="stat-incidents">0</div>
+                <div class="text-[10px] text-ink-muted">Incidents</div>
+            </div>
+            <div class="bg-surface-soft rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-satellite" id="stat-anomalies">0</div>
+                <div class="text-[10px] text-ink-muted">Anomalies</div>
+            </div>
+        </div>
+
+        <!-- Legende zones -->
+        <div class="mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-territory-600"></span> Zones (IEZ)
+            </h4>
+            <div class="space-y-1.5 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-normal"></span> Bon (>= 85)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Vigilance (65-84)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Degrade (40-64)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Critique (< 40)</div>
+            </div>
+        </div>
+
+        <!-- Legende feux -->
+        <div class="mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-risk-critical"></span> Feux FIRMS
+            </h4>
+            <div class="space-y-1.5 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Haute confiance</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Moyenne</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Basse</div>
+            </div>
+        </div>
+
+        <!-- Legende incidents -->
+        <div class="mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-risk-high"></span> Incidents
+            </h4>
+            <div class="space-y-1.5 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Critique</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Eleve</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Moyen</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-normal"></span> Faible</div>
+            </div>
+        </div>
+
+        <!-- Legende anomalies -->
+        <div class="mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-satellite"></span> Anomalies
+            </h4>
+            <div class="space-y-1.5 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-satellite opacity-80"></span> Vegetation</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-data-500 opacity-80"></span> Climat</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-purple-500 opacity-80"></span> Atmosphere</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-risk-high opacity-80"></span> Feu</div>
+            </div>
+        </div>
+
+        <!-- Zone survolee -->
+        <div id="hovered-zone-info" class="bg-surface-soft rounded-lg p-3 hidden">
+            <h4 class="text-xs font-semibold text-ink-soft mb-1">Zone survolee</h4>
+            <div id="hovered-zone-content" class="text-xs text-ink"></div>
+        </div>
+    </div>
+
+    <!-- LAYER TOGGLE BAR -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-surface-card/95 backdrop-blur-sm rounded-xl border border-surface-border shadow-card p-2">
+        <button onclick="toggleLayer('zones')" id="btn-zones" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-normal" title="Zones">
+            <i class="fas fa-circle-dot mr-1"></i>Zones
+        </button>
+        <button onclick="toggleLayer('fires')" id="btn-fires" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-critical" title="Feux">
+            <i class="fas fa-fire mr-1"></i>Feux
+        </button>
+        <button onclick="toggleLayer('stations')" id="btn-stations" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-data-600" title="Stations">
+            <i class="fas fa-tower-broadcast mr-1"></i>Stations
+        </button>
+        <button onclick="toggleLayer('incidents')" id="btn-incidents" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-high" title="Incidents">
+            <i class="fas fa-triangle-exclamation mr-1"></i>Incidents
+        </button>
+        <button onclick="toggleLayer('anomalies')" id="btn-anomalies" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-satellite" title="Anomalies">
+            <i class="fas fa-magnifying-glass mr-1"></i>Anomalies
+        </button>
+        <div class="w-px bg-surface-border mx-1"></div>
+        <button onclick="toggleLayer('heatmap')" id="btn-heatmap" class="layer-btn px-3 py-1.5 text-xs font-medium rounded-lg text-orange-500" title="Heatmap feux">
+            <i class="fas fa-fire-flame-curved mr-1"></i>Heatmap
+        </button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
-const map=L.map('map').setView([17.5,-3.0],6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM',maxZoom:18}).addTo(map);
-const vis={zones:true,fires:true,stations:true,incidents:true};
-const grps={};
-const iF=L.divIcon({html:'<div style="font-size:20px">🔥</div>',iconSize:[20,20],className:''});
-const iS=L.divIcon({html:'<div style="font-size:18px">📡</div>',iconSize:[18,18],className:''});
-const iI=L.divIcon({html:'<div style="font-size:18px">⚠</div>',iconSize:[18,18],className:''});
+// ── STATE ──
+let map, allData={zones:[],fires:[],stations:[],incidents:[],anomalies:[]};
+let grps={zones:null,fires:null,stations:null,incidents:null,anomalies:null,heatmap:null};
+let vis={zones:true,fires:true,stations:true,incidents:true,anomalies:true,heatmap:false};
+let activeSeverities=new Set(['CRITICAL','HIGH','MEDIUM','LOW']);
+let autoRefreshInterval=null;
 
-function tog(n){
-    vis[n]=!vis[n];
-    const btn=document.getElementById('btn-'+n);
-    if(vis[n]){
-        btn.style.opacity='1';
-        if(grps[n])grps[n].addTo(map);
-    } else {
-        btn.style.opacity='0.4';
-        if(grps[n])map.removeLayer(grps[n]);
+// ── MAP INIT ──
+map=L.map('map',{zoomControl:false}).setView([17.5,-3.0],6);
+L.control.zoom({position:'bottomright'}).addTo(map);
+
+// Dark map tiles
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom:18,subdomains:'abcd'
+}).addTo(map);
+
+// ── ICONS ──
+function fireIcon(conf){
+    const colors={high:'#DC2626',nominal:'#F97316',low:'#EAB308'};
+    const c=colors[conf]||'#F97316';
+    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 8px ${c}80"></div>`,iconSize:[14,14],className:''});
+}
+function stationIcon(status){
+    const c=status==='ACTIVE'?'#22C55E':status==='DEGRADED'?'#EAB308':'#94A3B8';
+    return L.divIcon({html:`<div style="width:12px;height:12px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 6px ${c}60"></div>`,iconSize:[12,12],className:''});
+}
+function incidentIcon(sev){
+    const colors={CRITICAL:'#DC2626',HIGH:'#F97316',MEDIUM:'#EAB308',LOW:'#22C55E'};
+    const c=colors[sev]||'#F97316';
+    return L.divIcon({html:`<div style="width:12px;height:12px;background:${c};border-radius:2px;border:2px solid white;transform:rotate(45deg);box-shadow:0 0 6px ${c}60"></div>`,iconSize:[12,12],className:''});
+}
+function anomalyIcon(type){
+    const colors={VEGETATION:'#8B5CF6',CLIMATE:'#3B82F6',ATMOSPHERE:'#A855F7',FIRE:'#F97316',WATER:'#06B6D4'};
+    const c=colors[type]||'#8B5CF6';
+    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:2px solid white;opacity:0.85"></div>`,iconSize:[10,10],className:''});
+}
+function zoneColor(zone){
+    const iez=zone.current_iez||0;
+    return iez>=85?'#22C55E':iez>=65?'#EAB308':iez>=40?'#F97316':'#DC2626';
+}
+
+// ── POPUP HELPERS ──
+function sevBadge(sev){
+    const c={CRITICAL:'bg-risk-critical/15 text-risk-critical',HIGH:'bg-risk-high/15 text-risk-high',MEDIUM:'bg-risk-vigil/15 text-risk-vigil',LOW:'bg-risk-normal/15 text-risk-normal'};
+    return `<span class="popup-badge ${c[sev]||''}">${sev}</span>`;
+}
+
+// ── LOAD DATA ──
+function loadMapData(){
+    return fetch('/api/map/').then(r=>r.json()).then(d=>{
+        allData=d;
+        const counts={zones:(d.zones||[]).length,fires:(d.fires||[]).length,stations:(d.stations||[]).length,incidents:(d.incidents||[]).length,anomalies:(d.anomalies||[]).length};
+        document.getElementById('map-status').textContent=
+            `${counts.zones} zones | ${counts.fires} feux | ${counts.stations} stations | ${counts.incidents} incidents | ${counts.anomalies} anomalies`;
+        document.getElementById('last-update').textContent='Mis a jour: '+new Date().toLocaleTimeString('fr-FR');
+        
+        // Update stats panel
+        document.getElementById('stat-zones').textContent=counts.zones;
+        document.getElementById('stat-fires').textContent=counts.fires;
+        document.getElementById('stat-incidents').textContent=counts.incidents;
+        document.getElementById('stat-anomalies').textContent=counts.anomalies;
+        
+        buildLayers();
+        applyFilters();
+    }).catch(e=>{
+        document.getElementById('map-status').textContent='Erreur de chargement';
+    });
+}
+
+// ── BUILD LAYERS ──
+function buildLayers(){
+    // Zones — CircleMarker with IEZ color
+    if(grps.zones)map.removeLayer(grps.zones);
+    grps.zones=L.layerGroup();
+    (allData.zones||[]).forEach(z=>{
+        if(!z.latitude||!z.longitude)return;
+        const c=zoneColor(z);
+        const m=L.circleMarker([z.latitude,z.longitude],{
+            radius:14,color:c,fillColor:c,fillOpacity:0.25,weight:3
+        });
+        m._data={...z,_layer:'zones'};
+        m.bindPopup(`<div class="map-popup">
+            <div class="popup-title">${z.name}</div>
+            <div class="popup-row"><span>Type</span><span>${z.zone_type||'-'}</span></div>
+            <div class="popup-row"><span>IEZ</span><span style="font-weight:700;color:${c}">${z.current_iez}</span></div>
+            <div class="popup-row"><span>Statut</span>${sevBadge(z.status)}</div>
+            <div class="popup-row"><span>Vulnerabilite</span><span>${z.vulnerability_level||'-'}</span></div>
+            <div class="mt-2"><a href="/zones/${z.id}/" class="text-xs text-territory-600 hover:underline">Voir details →</a></div>
+        </div>`);
+        m.on('mouseover',function(){showZoneInfo(z);});
+        m.addTo(grps.zones);
+    });
+
+    // Fires — clusterized
+    if(grps.fires)map.removeLayer(grps.fires);
+    grps.fires=L.markerClusterGroup({
+        maxClusterRadius:40,
+        spiderfyOnMaxZoom:true,
+        showCoverageOnHover:false,
+        iconCreateFunction:function(cluster){
+            const count=cluster.getChildCount();
+            const size=count<10?'small':count<50?'medium':'large';
+            return L.divIcon({html:`<div class="cluster-${size} w-10 h-10 rounded-full flex items-center justify-center bg-surface-card border-2 border-risk-critical/50 shadow-card"><span class="text-xs font-bold text-risk-critical">${count}</span></div>`,iconSize:[40,40],className:''});
+        }
+    });
+    (allData.fires||[]).forEach(f=>{
+        const m=L.marker([f.latitude,f.longitude],{icon:fireIcon(f.confidence)});
+        m._data={...f,_layer:'fires'};
+        const date=f.detected_at?new Date(f.detected_at).toLocaleDateString('fr-FR'):'-';
+        m.bindPopup(`<div class="map-popup">
+            <div class="popup-title">🔥 Feu actif</div>
+            <div class="popup-row"><span>Confiance</span>${sevBadge(f.confidence?.toUpperCase()||'MEDIUM')}</div>
+            <div class="popup-row"><span>FRP</span><span>${f.frp||'-'} MW</span></div>
+            <div class="popup-row"><span>Date</span><span>${date}</span></div>
+        </div>`);
+        m.addTo(grps.fires);
+    });
+
+    // Stations
+    if(grps.stations)map.removeLayer(grps.stations);
+    grps.stations=L.layerGroup();
+    (allData.stations||[]).forEach(s=>{
+        if(!s.latitude||!s.longitude)return;
+        const m=L.marker([s.latitude,s.longitude],{icon:stationIcon(s.status)});
+        m._data={...s,_layer:'stations'};
+        m.bindPopup(`<div class="map-popup">
+            <div class="popup-title">📡 ${s.code}</div>
+            <div class="popup-row"><span>Nom</span><span>${s.name}</span></div>
+            <div class="popup-row"><span>Statut</span>${sevBadge(s.status)}</div>
+        </div>`);
+        m.addTo(grps.stations);
+    });
+
+    // Incidents
+    if(grps.incidents)map.removeLayer(grps.incidents);
+    grps.incidents=L.layerGroup();
+    (allData.incidents||[]).forEach(inc=>{
+        if(!inc.latitude||!inc.longitude)return;
+        const m=L.marker([inc.latitude,inc.longitude],{icon:incidentIcon(inc.severity)});
+        m._data={...inc,_layer:'incidents'};
+        const date=inc.detected_at?new Date(inc.detected_at).toLocaleDateString('fr-FR'):'-';
+        m.bindPopup(`<div class="map-popup">
+            <div class="popup-title">⚠ ${inc.title}</div>
+            <div class="popup-row"><span>Type</span><span>${(inc.incident_type||'-').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Severite</span>${sevBadge(inc.severity)}</div>
+            <div class="popup-row"><span>Date</span><span>${date}</span></div>
+            <div class="mt-2"><a href="/incidents/${inc.id}/" class="text-xs text-risk-high hover:underline">Voir details →</a></div>
+        </div>`);
+        m.addTo(grps.incidents);
+    });
+
+    // Anomalies
+    if(grps.anomalies)map.removeLayer(grps.anomalies);
+    grps.anomalies=L.layerGroup();
+    (allData.anomalies||[]).forEach(a=>{
+        const zone=(allData.zones||[]).find(z=>z.id===a.zone_id);
+        if(!zone||!zone.latitude||!zone.longitude)return;
+        const offset=Math.random()*0.3-0.15;
+        const m=L.marker([zone.latitude+offset,zone.longitude+offset],{icon:anomalyIcon(a.anomaly_type)});
+        m._data={...a,_layer:'anomalies'};
+        m.bindPopup(`<div class="map-popup">
+            <div class="popup-title">🔍 Anomalie</div>
+            <div class="popup-row"><span>Type</span><span>${a.anomaly_type}</span></div>
+            <div class="popup-row"><span>Severite</span>${sevBadge(a.severity)}</div>
+            <div class="popup-row"><span>Zone</span><span>${zone.name}</span></div>
+        </div>`);
+        m.addTo(grps.anomalies);
+    });
+
+    // Heatmap
+    buildHeatmap();
+}
+
+function buildHeatmap(){
+    if(grps.heatmap)map.removeLayer(grps.heatmap);
+    const points=(allData.fires||[]).map(f=>[f.latitude,f.longitude,f.frp?f.frp/200:0.5]);
+    grps.heatmap=L.heatLayer(points,{radius:25,blur:15,maxZoom:10,gradient:{0.2:'blue',0.4:'lime',0.6:'yellow',0.8:'orange',1:'red'}});
+}
+
+// ── FILTERS ──
+function applyFilters(){
+    const sevFilter=document.getElementById('filter-incident-type')?.value||'';
+    const fireConf=document.getElementById('filter-fire-confidence')?.value||'';
+    const zoneType=document.getElementById('filter-zone-type')?.value||'';
+
+    Object.keys(grps).forEach(key=>{
+        if(!grps[key])return;
+        grps[key].eachLayer(layer=>{
+            if(!layer._data)return;
+            let show=true;
+            const d=layer._data;
+
+            if((d._layer==='incidents'||d._layer==='anomalies')&&!activeSeverities.has(d.severity))show=false;
+            if(d._layer==='incidents'&&sevFilter&&d.incident_type!==sevFilter)show=false;
+            if(d._layer==='fires'&&fireConf&&d.confidence!==fireConf)show=false;
+            if(d._layer==='zones'&&zoneType&&d.zone_type!==zoneType)show=false;
+
+            if(show){
+                if(!map.hasLayer(layer))grps[key].addLayer(layer);
+            }else{
+                if(map.hasLayer(layer))grps[key].removeLayer(layer);
+            }
+        });
+    });
+}
+
+function toggleSeverity(sev){
+    if(activeSeverities.has(sev))activeSeverities.delete(sev);
+    else activeSeverities.add(sev);
+    document.querySelectorAll('.severity-btn').forEach(b=>{
+        b.style.opacity=activeSeverities.has(b.dataset.sev)?'1':'0.3';
+    });
+    applyFilters();
+}
+
+function filterZonesByName(query){
+    if(!query){applyFilters();return;}
+    const q=query.toLowerCase();
+    grps.zones?.eachLayer(layer=>{
+        if(!layer._data)return;
+        const match=layer._data.name?.toLowerCase().includes(q);
+        if(match){
+            map.addLayer(layer);
+            map.setView([layer._data.latitude,layer._data.longitude],8);
+        }else{
+            map.removeLayer(layer);
+        }
+    });
+}
+
+function resetFilters(){
+    activeSeverities=new Set(['CRITICAL','HIGH','MEDIUM','LOW']);
+    document.querySelectorAll('.severity-btn').forEach(b=>b.style.opacity='1');
+    document.getElementById('filter-incident-type').value='';
+    document.getElementById('filter-fire-confidence').value='';
+    document.getElementById('filter-zone-type').value='';
+    document.getElementById('search-zone').value='';
+    
+    Object.keys(vis).forEach(k=>vis[k]=true);
+    document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=true);
+    document.querySelectorAll('.layer-btn').forEach(b=>b.classList.add('active'));
+    
+    Object.keys(grps).forEach(k=>{
+        if(!grps[k])return;
+        if(!map.hasLayer(grps[k]))map.addLayer(grps[k]);
+    });
+    applyFilters();
+    map.setView([17.5,-3.0],6);
+}
+
+// ── LAYER TOGGLE ──
+function toggleLayer(name){
+    vis[name]=!vis[name];
+    
+    // Update checkbox
+    const cb=document.getElementById('layer-'+name);
+    if(cb)cb.checked=vis[name];
+    
+    // Update bottom bar button
+    const btn=document.getElementById('btn-'+name);
+    if(btn){
+        if(vis[name])btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+    
+    if(name==='heatmap'){
+        if(vis[name]){if(grps.heatmap)grps.heatmap.addTo(map);}
+        else{if(grps.heatmap)map.removeLayer(grps.heatmap);}
+    }else{
+        if(vis[name]){if(grps[name])map.addLayer(grps[name]);}
+        else{if(grps[name])map.removeLayer(grps[name]);}
     }
 }
 
-fetch('/api/map/').then(r=>r.json()).then(d=>{
-    const zg=L.layerGroup();
-    (d.zones||[]).forEach(z=>{
-        if(z.latitude&&z.longitude){
-            const c=z.status==='CRITICAL'?'#DC2626':z.status==='ALERT'?'#F97316':z.status==='MONITORING'?'#EAB308':'#15803D';
-            L.circleMarker([z.latitude,z.longitude],{radius:12,color:c,fillColor:c,fillOpacity:0.3,weight:2}).bindPopup('<div class="font-display font-semibold">'+z.name+'</div><div class="text-sm text-ink-muted">IEZ: '+z.current_iez+'</div><div class="text-xs text-ink-muted">'+z.status+'</div>').addTo(zg);
-        }
-    });
-    grps.zones=zg;grps.zones.addTo(map);
+// ── PANELS ──
+function toggleFilterPanel(){
+    const p=document.getElementById('filter-panel');
+    filterPanelVisible=!filterPanelVisible;
+    p.className='filter-panel '+(filterPanelVisible?'expanded absolute left-0':'collapsed absolute left-0');
+}
+function toggleStatsPanel(){
+    const p=document.getElementById('stats-panel');
+    statsPanelVisible=!statsPanelVisible;
+    p.className='stats-panel '+(statsPanelVisible?'expanded absolute right-0':'collapsed absolute right-0');
+}
+let filterPanelVisible=true, statsPanelVisible=true;
 
-    const fg=L.layerGroup();
-    (d.fires||[]).forEach(f=>{L.marker([f.latitude,f.longitude],{icon:iF}).bindPopup('<div class="font-display font-semibold">Feu</div><div class="text-sm text-ink-muted">Confiance: '+f.confidence+'</div>').addTo(fg);});
-    grps.fires=fg;
+// ── ZONE HOVER INFO ──
+function showZoneInfo(z){
+    const el=document.getElementById('hovered-zone-info');
+    const content=document.getElementById('hovered-zone-content');
+    el.classList.remove('hidden');
+    const iez=z.current_iez||0;
+    const color=iez>=85?'text-risk-normal':iez>=65?'text-risk-vigil':iez>=40?'text-risk-high':'text-risk-critical';
+    content.innerHTML=`
+        <div class="font-semibold">${z.name}</div>
+        <div class="flex justify-between mt-1"><span>Type</span><span>${z.zone_type||'-'}</span></div>
+        <div class="flex justify-between"><span>IEZ</span><span class="font-bold ${color}">${iez}</span></div>
+        <div class="flex justify-between"><span>Statut</span><span>${z.status}</span></div>
+    `;
+}
 
-    const sg=L.layerGroup();
-    (d.stations||[]).forEach(s=>{L.marker([s.latitude,s.longitude],{icon:iS}).bindPopup('<div class="font-display font-semibold">'+s.code+'</div><div class="text-sm">'+s.name+'</div><div class="text-xs text-ink-muted">'+s.status+'</div>').addTo(sg);});
-    grps.stations=sg;
+// ── AUTO REFRESH ──
+function toggleAutoRefresh(){
+    const btn=document.getElementById('btn-auto-refresh');
+    if(autoRefreshInterval){
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval=null;
+        btn.className='px-3 py-1.5 text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors';
+        btn.innerHTML='<i class="fas fa-sync-alt mr-1"></i> Auto-refresh';
+    }else{
+        autoRefreshInterval=setInterval(refreshMap,60000);
+        btn.className='px-3 py-1.5 text-xs font-medium rounded-lg border bg-risk-normal/10 border-risk-normal/30 text-risk-normal transition-colors';
+        btn.innerHTML='<i class="fas fa-sync-alt mr-1 pulse-dot"></i> Auto-refresh ON';
+    }
+}
 
-    const ig=L.layerGroup();
-    (d.incidents||[]).forEach(inc=>{
-        if(inc.latitude&&inc.longitude)L.marker([inc.latitude,inc.longitude],{icon:iI}).bindPopup('<div class="font-display font-semibold">'+inc.title+'</div><div class="text-xs text-ink-muted">'+inc.severity+'</div>').addTo(ig);
-    });
-    grps.incidents=ig;
-}).catch(()=>{});
+function refreshMap(){
+    document.getElementById('map-status').textContent='Actualisation...';
+    loadMapData();
+}
+
+// ── INIT ──
+loadMapData();
 </script>
 {% endblock %}

@@ -7,9 +7,10 @@ class GroqProvider(AIProvider):
     name = "groq"
     is_optional = True
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.3-70b-versatile"):
-        self.api_key = api_key
-        self.model = model
+    def __init__(self, api_key: Optional[str] = None, model: str = None):
+        from decouple import config as _config
+        self.api_key = api_key or _config("GROQ_API_KEY", default="")
+        self.model = model or _config("GROQ_MODEL", default="groq/compound")
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self.session = requests.Session()
         if self.api_key:
@@ -29,7 +30,6 @@ class GroqProvider(AIProvider):
         system_prompt = (
             "Tu es un assistant d'analyse environnementale. "
             "Tu ne prends pas de décision : tu expliques, contextualises et recommandes. "
-            "Tu ne remplaces jamais un calcul scientifique. "
             "Réponds en français, concis et structuré."
         )
         payload = {
@@ -39,12 +39,16 @@ class GroqProvider(AIProvider):
                 {"role": "user", "content": str(context)},
             ],
             "temperature": 0.2,
+            "max_tokens": 500,
         }
-        response = self.session.post(self.base_url, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        return {
-            "summary": data["choices"][0]["message"]["content"],
-            "model": self.model,
-            "provider": self.name,
-        }
+        try:
+            response = self.session.post(self.base_url, json=payload, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            return {
+                "summary": data["choices"][0]["message"]["content"],
+                "model": self.model,
+                "provider": self.name,
+            }
+        except Exception as e:
+            return {"summary": "", "error": str(e), "model": self.model, "provider": self.name}

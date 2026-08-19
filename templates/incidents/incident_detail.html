@@ -6,7 +6,7 @@
         <h1 class="text-2xl font-display font-bold">{{ incident.title }}</h1>
         <p class="text-sm text-ink-muted mt-1"><i class="fas fa-exclamation-triangle mr-1 text-risk-high"></i>{{ incident.get_incident_type_display }} — {{ incident.zone }}</p>
     </div>
-    <div>
+    <div class="flex items-center gap-3">
         {% if incident.severity == 'CRITICAL' %}<span class="px-3 py-1 text-sm font-bold rounded-full bg-risk-critical/10 text-risk-critical"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ incident.get_severity_display }}</span>
         {% elif incident.severity == 'HIGH' %}<span class="px-3 py-1 text-sm font-bold rounded-full bg-risk-high/10 text-risk-high"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ incident.get_severity_display }}</span>
         {% elif incident.severity == 'MEDIUM' %}<span class="px-3 py-1 text-sm font-bold rounded-full bg-risk-vigil/10 text-risk-vigil"><i class="fas fa-circle text-[6px] mr-1.5"></i>{{ incident.get_severity_display }}</span>
@@ -14,6 +14,8 @@
         {% endif %}
     </div>
 </div>
+
+<!-- KPIs -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
     <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 text-center">
         <div class="w-8 h-8 rounded-lg bg-risk-critical/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-chart-line text-risk-critical text-sm"></i></div>
@@ -36,6 +38,8 @@
         <div class="text-xs text-ink-muted">Detection</div>
     </div>
 </div>
+
+<!-- Description -->
 <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6 mb-8">
     <div class="flex items-center gap-2 mb-4">
         <div class="w-1.5 h-6 rounded-full bg-territory-600"></div>
@@ -43,6 +47,45 @@
     </div>
     <p class="text-ink-soft leading-relaxed">{{ incident.description|default:"Aucune description" }}</p>
 </div>
+
+<!-- AI Analysis Section -->
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <div class="w-1.5 h-6 rounded-full bg-purple-500"></div>
+            <h2 class="font-display font-semibold">Analyse IA (Groq)</h2>
+        </div>
+        <button id="btn-analyze" onclick="analyzeIncident()" class="px-4 py-2 text-sm font-medium rounded-lg bg-purple-500/10 text-purple-600 border border-purple-500/30 hover:bg-purple-500/20 transition-colors">
+            <i class="fas fa-brain mr-2"></i>Analyser cet incident
+        </button>
+    </div>
+    
+    <div id="ai-loading" class="hidden text-center py-8">
+        <div class="inline-flex items-center gap-3 text-ink-muted">
+            <div class="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-sm">Analyse en cours...</span>
+        </div>
+    </div>
+    
+    <div id="ai-result" class="hidden">
+        <div class="bg-surface-soft rounded-xl p-4 border border-surface-border">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-robot text-purple-500"></i>
+                <span class="text-sm font-semibold text-ink-soft">Recommandations IA</span>
+            </div>
+            <div id="ai-summary" class="text-sm text-ink-soft leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+    </div>
+    
+    <div id="ai-error" class="hidden text-center py-4">
+        <div class="inline-flex items-center gap-2 text-risk-high text-sm">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="ai-error-msg">Erreur lors de l'analyse</span>
+        </div>
+    </div>
+</div>
+
+<!-- Informations & Données -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6">
         <div class="flex items-center gap-2 mb-4">
@@ -64,6 +107,10 @@
                 <p class="text-sm text-ink-soft font-mono">{{ incident.latitude|floatformat:3 }}, {{ incident.longitude|floatformat:3 }}</p>
             </div>
             {% endif %}
+            <div>
+                <div class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-0.5">Derniere MAJ</div>
+                <p class="text-sm text-ink-soft">{{ incident.updated_at|date:"d/m/Y H:i" }}</p>
+            </div>
         </div>
     </div>
     <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6">
@@ -74,7 +121,115 @@
         <pre class="text-xs bg-surface-soft p-4 rounded-xl border border-surface-border overflow-auto max-h-48 font-mono text-ink-soft">{{ incident.metadata|pprint }}</pre>
     </div>
 </div>
-<a href="{% url 'incidents:incident_list' %}" class="inline-flex items-center gap-2 bg-surface-soft text-ink-soft px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-border transition-colors">
-    <i class="fas fa-arrow-left text-xs"></i> Retour aux incidents
-</a>
+
+<!-- Mini carte si position disponible -->
+{% if incident.latitude and incident.longitude %}
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6 mb-8">
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-1.5 h-6 rounded-full bg-risk-high"></div>
+        <h2 class="font-display font-semibold">Localisation</h2>
+    </div>
+    <div id="incident-map" class="rounded-xl border border-surface-border" style="height:300px;"></div>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="flex items-center gap-3">
+    <a href="{% url 'incidents:incident_list' %}" class="inline-flex items-center gap-2 bg-surface-soft text-ink-soft px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-border transition-colors">
+        <i class="fas fa-arrow-left text-xs"></i> Retour aux incidents
+    </a>
+    {% if incident.status == 'NEW' %}
+    <form method="post" action="{% url 'incidents:incident_update_status' incident.id %}" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="INVESTIGATING">
+        <button type="submit" class="inline-flex items-center gap-2 bg-data-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-data-700 transition-colors">
+            <i class="fas fa-search text-xs"></i> Commencer l'investigation
+        </button>
+    </form>
+    {% endif %}
+    {% if incident.status == 'INVESTIGATING' %}
+    <form method="post" action="{% url 'incidents:incident_update_status' incident.id %}" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="RESOLVED">
+        <button type="submit" class="inline-flex items-center gap-2 bg-risk-normal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-risk-normal/90 transition-colors">
+            <i class="fas fa-check text-xs"></i> Marquer resolu
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function analyzeIncident() {
+    const btn = document.getElementById('btn-analyze');
+    const loading = document.getElementById('ai-loading');
+    const result = document.getElementById('ai-result');
+    const error = document.getElementById('ai-error');
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<div class="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mr-2"></div>Analyse...';
+    loading.classList.remove('hidden');
+    result.classList.add('hidden');
+    error.classList.add('hidden');
+    
+    // Call the API
+    fetch('/api/incidents/{{ incident.id }}/analyze/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.classList.add('hidden');
+        
+        if (data.success) {
+            document.getElementById('ai-summary').textContent = data.summary;
+            result.classList.remove('hidden');
+        } else {
+            document.getElementById('ai-error-msg').textContent = data.error || 'Analyse impossible';
+            error.classList.remove('hidden');
+        }
+        
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-brain mr-2"></i>Re-analyser';
+    })
+    .catch(err => {
+        loading.classList.add('hidden');
+        document.getElementById('ai-error-msg').textContent = 'Erreur de connexion';
+        error.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-brain mr-2"></i>Analyser cet incident';
+    });
+}
+
+// Mini carte si disponible
+{% if incident.latitude and incident.longitude %}
+document.addEventListener('DOMContentLoaded', function() {
+    const map = L.map('incident-map').setView([{{ incident.latitude }}, {{ incident.longitude }}], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'OSM'
+    }).addTo(map);
+    
+    const sevColors = {
+        'CRITICAL': '#DC2626',
+        'HIGH': '#F97316',
+        'MEDIUM': '#EAB308',
+        'LOW': '#22C55E'
+    };
+    const color = sevColors['{{ incident.severity }}'] || '#F97316';
+    
+    L.circleMarker([{{ incident.latitude }}, {{ incident.longitude }}], {
+        radius: 12,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.3,
+        weight: 3
+    }).addTo(map).bindPopup('<b>{{ incident.title }}</b><br>{{ incident.get_severity_display }}');
+});
+{% endif %}
+</script>
 {% endblock %}

@@ -1,7 +1,5 @@
 Django>=4.2,<5.0
 psycopg2-binary>=2.9,<3.0
-django>=4.2,<5.0
-django.contrib.gis
 djangorestframework>=3.14
 celery>=5.3,<6.0
 redis>=5.0,<6.0
@@ -14,3 +12,16 @@ Pillow>=10.0
 numpy>=1.24
 pandas>=2.0
 python-dateutil>=2.8
+
+# AWS S3 access for Landsat (Requester Pays)
+boto3>=1.28,<2.0
+
+# OpenAI-compatible AI
+openai>=1.0,<2.0
+
+# Raster processing (optional — for CHIRPS, Sentinel-2/5P)
+# rasterio>=1.3
+# GDAL>=3.6
+
+# Rate limiting for API endpoints
+django-ratelimit>=4.1
