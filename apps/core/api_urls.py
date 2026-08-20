@@ -1,5 +1,6 @@
 from django.urls import path
 from . import api_views
+from apps.incidents.views import incident_analyze_api
 
 app_name = "api"
 
@@ -10,6 +11,7 @@ urlpatterns = [
     path("fires/", api_views.fires_api, name="fires"),
     path("stations/", api_views.stations_api, name="stations"),
     path("incidents/", api_views.incidents_api, name="incidents"),
+    path("incidents/<int:pk>/analyze/", incident_analyze_api, name="incident_analyze"),
     path("alerts/", api_views.alerts_api, name="alerts"),
     path("vegetation/", api_views.vegetation_api, name="vegetation"),
     path("climate/", api_views.climate_api, name="climate"),
