@@ -5,10 +5,10 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <style>
-    .filter-panel{transition:all .2s ease}
+    .filter-panel{transition:all .25s ease}
     .filter-panel.collapsed{transform:translateX(-100%);opacity:0;pointer-events:none}
     .filter-panel.expanded{transform:translateX(0);opacity:1}
-    .stats-panel{transition:all .2s ease}
+    .stats-panel{transition:all .25s ease}
     .stats-panel.collapsed{transform:translateX(100%);opacity:0;pointer-events:none}
     .stats-panel.expanded{transform:translateX(0);opacity:1}
     .layer-btn{transition:all .15s ease}
@@ -16,14 +16,28 @@
     .layer-btn.active{box-shadow:0 0 0 2px rgba(255,255,255,0.8),0 0 0 4px currentColor}
     .pulse-dot{animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-    .map-popup{font-family:'Inter',sans-serif}
-    .map-popup .popup-title{font-weight:600;font-size:14px;margin-bottom:4px}
-    .map-popup .popup-row{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#64748b}
-    .map-popup .popup-badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:600}
     .leaflet-container{background:#0F172A}
     .cluster-small{background-color:rgba(34,197,94,0.3)}
     .cluster-medium{background-color:rgba(234,179,8,0.3)}
     .cluster-large{background-color:rgba(220,38,38,0.3)}
+
+    /* ── Popups ── */
+    .map-popup{font-family:'Inter',sans-serif;min-width:220px;max-width:300px}
+    .map-popup .popup-title{font-weight:700;font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .map-popup .popup-section{margin-top:8px;padding-top:6px;border-top:1px solid #E2E8F0}
+    .map-popup .popup-section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:4px}
+    .map-popup .popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px}
+    .map-popup .popup-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#334155;padding:2px 0}
+    .map-popup .popup-row span:first-child{color:#64748b}
+    .map-popup .popup-row span:last-child{font-weight:600}
+    .map-popup .popup-badge{display:inline-block;padding:1px 8px;border-radius:9999px;font-size:10px;font-weight:600}
+    .map-popup .popup-bar{height:4px;border-radius:2px;background:#E2E8F0;overflow:hidden;margin-top:3px}
+    .map-popup .popup-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+    .map-popup .popup-sparkline{display:flex;align-items:flex-end;gap:1px;height:20px;margin-top:4px}
+    .map-popup .popup-sparkline div{flex:1;border-radius:1px 1px 0 0;min-width:3px}
+    .map-popup .popup-link{display:inline-flex;align-items:center;gap:4px;color:#2563EB;font-size:11px;font-weight:600;margin-top:6px;text-decoration:none}
+    .map-popup .popup-link:hover{text-decoration:underline}
+    .map-popup .popup-source{font-size:9px;color:#94A3B8;margin-top:4px;display:flex;align-items:center;gap:3px}
 </style>
 {% endblock %}
 
@@ -52,7 +66,7 @@
     <div id="filter-panel" class="filter-panel expanded absolute left-0 top-0 z-20 w-72 bg-surface-card rounded-xl border border-surface-border shadow-card p-4 overflow-y-auto" style="max-height:100%">
         <div class="flex items-center justify-between mb-3">
             <h3 class="font-display font-semibold text-sm flex items-center gap-2">
-                <i class="fas fa-sliders-h text-territory-600"></i> Filtres
+                <i class="fas fa-sliders-h text-territory-600"></i> Filtres &amp; Couches
             </h3>
             <button onclick="toggleFilterPanel()" class="text-ink-muted hover:text-ink text-xs"><i class="fas fa-times"></i></button>
         </div>
@@ -66,9 +80,9 @@
             </div>
         </div>
 
-        <!-- Couches -->
+        <!-- Couches principales -->
         <div class="mb-4">
-            <label class="text-xs font-medium text-ink-soft mb-2 block">Couches</label>
+            <label class="text-xs font-medium text-ink-soft mb-2 block">Couches principales</label>
             <div class="space-y-1.5">
                 <label class="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" id="layer-zones" checked onchange="toggleLayer('zones')" class="w-4 h-4 rounded border-surface-border text-territory-600 focus:ring-territory-500">
@@ -95,7 +109,28 @@
                     <span class="w-3 h-3 rounded-full bg-satellite"></span>
                     <span class="text-xs text-ink-soft group-hover:text-ink">Anomalies</span>
                 </label>
-                <div class="border-t border-surface-border my-2"></div>
+            </div>
+        </div>
+
+        <!-- Couches satellite -->
+        <div class="mb-4">
+            <label class="text-xs font-medium text-ink-soft mb-2 block">Couches satellite</label>
+            <div class="space-y-1.5">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-ndvi" onchange="toggleLayer('ndvi')" class="w-4 h-4 rounded border-surface-border text-territory-600 focus:ring-territory-500">
+                    <span class="w-3 h-3 rounded-full" style="background:linear-gradient(135deg,#DC2626,#EAB308,#22C55E)"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">NDVI Vegetation</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-no2" onchange="toggleLayer('no2')" class="w-4 h-4 rounded border-surface-border text-purple-500 focus:ring-purple-500">
+                    <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">NO2 / Qualite air</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" id="layer-risks" onchange="toggleLayer('risks')" class="w-4 h-4 rounded border-surface-border text-orange-500 focus:ring-orange-500">
+                    <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                    <span class="text-xs text-ink-soft group-hover:text-ink">Zones a risque</span>
+                </label>
                 <label class="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" id="layer-heatmap" onchange="toggleLayer('heatmap')" class="w-4 h-4 rounded border-surface-border text-orange-500 focus:ring-orange-500">
                     <span class="w-3 h-3 rounded-full bg-orange-500"></span>
@@ -175,23 +210,39 @@
         </div>
 
         <!-- Compteurs live -->
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <div class="bg-surface-soft rounded-lg p-3 text-center">
-                <div class="text-2xl font-bold text-territory-700" id="stat-zones">0</div>
-                <div class="text-[10px] text-ink-muted">Zones</div>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-territory-700" id="stat-zones">0</div>
+                <div class="text-[9px] text-ink-muted">Zones</div>
             </div>
-            <div class="bg-surface-soft rounded-lg p-3 text-center">
-                <div class="text-2xl font-bold text-risk-critical" id="stat-fires">0</div>
-                <div class="text-[10px] text-ink-muted">Feux</div>
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-risk-critical" id="stat-fires">0</div>
+                <div class="text-[9px] text-ink-muted">Feux</div>
             </div>
-            <div class="bg-surface-soft rounded-lg p-3 text-center">
-                <div class="text-2xl font-bold text-risk-high" id="stat-incidents">0</div>
-                <div class="text-[10px] text-ink-muted">Incidents</div>
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-risk-high" id="stat-incidents">0</div>
+                <div class="text-[9px] text-ink-muted">Incidents</div>
             </div>
-            <div class="bg-surface-soft rounded-lg p-3 text-center">
-                <div class="text-2xl font-bold text-satellite" id="stat-anomalies">0</div>
-                <div class="text-[10px] text-ink-muted">Anomalies</div>
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-satellite" id="stat-anomalies">0</div>
+                <div class="text-[9px] text-ink-muted">Anomalies</div>
             </div>
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-territory-600" id="stat-ndvi">—</div>
+                <div class="text-[9px] text-ink-muted">NDVI moy.</div>
+            </div>
+            <div class="bg-surface-soft rounded-lg p-2 text-center">
+                <div class="text-lg font-bold text-purple-600" id="stat-no2">—</div>
+                <div class="text-[9px] text-ink-muted">NO2</div>
+            </div>
+        </div>
+
+        <!-- Zone survolee -->
+        <div id="hovered-zone-info" class="bg-surface-soft rounded-lg p-3 hidden mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-territory-600"></span> Zone survolee
+            </h4>
+            <div id="hovered-zone-content" class="text-xs text-ink"></div>
         </div>
 
         <!-- Legende zones -->
@@ -199,11 +250,24 @@
             <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-territory-600"></span> Zones (IEZ)
             </h4>
-            <div class="space-y-1.5 text-[11px]">
+            <div class="space-y-1 text-[11px]">
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-normal"></span> Bon (>= 85)</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Vigilance (65-84)</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Degrade (40-64)</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Critique (< 40)</div>
+            </div>
+        </div>
+
+        <!-- Legende NDVI -->
+        <div class="mb-4">
+            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-territory-500"></span> NDVI Vegetation
+            </h4>
+            <div class="space-y-1 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Bare (< 0.2)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Faible (0.2-0.4)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-territory-500"></span> Modere (0.4-0.6)</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-territory-700"></span> Dense (> 0.6)</div>
             </div>
         </div>
 
@@ -212,65 +276,55 @@
             <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-risk-critical"></span> Feux FIRMS
             </h4>
-            <div class="space-y-1.5 text-[11px]">
+            <div class="space-y-1 text-[11px]">
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Haute confiance</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Moyenne</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Basse</div>
             </div>
         </div>
 
-        <!-- Legende incidents -->
+        <!-- Legende qualite air -->
         <div class="mb-4">
             <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-risk-high"></span> Incidents
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span> Qualite air
             </h4>
-            <div class="space-y-1.5 text-[11px]">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Critique</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Eleve</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Moyen</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-normal"></span> Faible</div>
+            <div class="space-y-1 text-[11px]">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-normal"></span> Bon</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-vigil"></span> Modere</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-high"></span> Mauvais</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-risk-critical"></span> Dangereux</div>
             </div>
-        </div>
-
-        <!-- Legende anomalies -->
-        <div class="mb-4">
-            <h4 class="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-satellite"></span> Anomalies
-            </h4>
-            <div class="space-y-1.5 text-[11px]">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-satellite opacity-80"></span> Vegetation</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-data-500 opacity-80"></span> Climat</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-purple-500 opacity-80"></span> Atmosphere</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-risk-high opacity-80"></span> Feu</div>
-            </div>
-        </div>
-
-        <!-- Zone survolee -->
-        <div id="hovered-zone-info" class="bg-surface-soft rounded-lg p-3 hidden">
-            <h4 class="text-xs font-semibold text-ink-soft mb-1">Zone survolee</h4>
-            <div id="hovered-zone-content" class="text-xs text-ink"></div>
         </div>
     </div>
 
     <!-- LAYER TOGGLE BAR -->
-    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-surface-card/95 backdrop-blur-sm rounded-xl border border-surface-border shadow-card p-2">
-        <button onclick="toggleLayer('zones')" id="btn-zones" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-normal" title="Zones">
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-surface-card/95 backdrop-blur-sm rounded-xl border border-surface-border shadow-card p-1.5">
+        <button onclick="toggleLayer('zones')" id="btn-zones" class="layer-btn active px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-risk-normal" title="Zones">
             <i class="fas fa-circle-dot mr-1"></i>Zones
         </button>
-        <button onclick="toggleLayer('fires')" id="btn-fires" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-critical" title="Feux">
+        <button onclick="toggleLayer('fires')" id="btn-fires" class="layer-btn active px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-risk-critical" title="Feux">
             <i class="fas fa-fire mr-1"></i>Feux
         </button>
-        <button onclick="toggleLayer('stations')" id="btn-stations" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-data-600" title="Stations">
+        <button onclick="toggleLayer('stations')" id="btn-stations" class="layer-btn active px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-data-600" title="Stations">
             <i class="fas fa-tower-broadcast mr-1"></i>Stations
         </button>
-        <button onclick="toggleLayer('incidents')" id="btn-incidents" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-risk-high" title="Incidents">
+        <button onclick="toggleLayer('incidents')" id="btn-incidents" class="layer-btn active px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-risk-high" title="Incidents">
             <i class="fas fa-triangle-exclamation mr-1"></i>Incidents
         </button>
-        <button onclick="toggleLayer('anomalies')" id="btn-anomalies" class="layer-btn active px-3 py-1.5 text-xs font-medium rounded-lg text-satellite" title="Anomalies">
+        <button onclick="toggleLayer('anomalies')" id="btn-anomalies" class="layer-btn active px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-satellite" title="Anomalies">
             <i class="fas fa-magnifying-glass mr-1"></i>Anomalies
         </button>
-        <div class="w-px bg-surface-border mx-1"></div>
-        <button onclick="toggleLayer('heatmap')" id="btn-heatmap" class="layer-btn px-3 py-1.5 text-xs font-medium rounded-lg text-orange-500" title="Heatmap feux">
+        <div class="w-px bg-surface-border mx-0.5"></div>
+        <button onclick="toggleLayer('ndvi')" id="btn-ndvi" class="layer-btn px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-territory-600" title="NDVI">
+            <i class="fas fa-leaf mr-1"></i>NDVI
+        </button>
+        <button onclick="toggleLayer('no2')" id="btn-no2" class="layer-btn px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-purple-500" title="Qualite air">
+            <i class="fas fa-cloud mr-1"></i>Air
+        </button>
+        <button onclick="toggleLayer('risks')" id="btn-risks" class="layer-btn px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-orange-500" title="Risques">
+            <i class="fas fa-shield-halved mr-1"></i>Risques
+        </button>
+        <button onclick="toggleLayer('heatmap')" id="btn-heatmap" class="layer-btn px-2.5 py-1.5 text-[11px] font-medium rounded-lg text-orange-500" title="Heatmap feux">
             <i class="fas fa-fire-flame-curved mr-1"></i>Heatmap
         </button>
     </div>
@@ -282,17 +336,17 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
 // ── STATE ──
-let map, allData={zones:[],fires:[],stations:[],incidents:[],anomalies:[]};
-let grps={zones:null,fires:null,stations:null,incidents:null,anomalies:null,heatmap:null};
-let vis={zones:true,fires:true,stations:true,incidents:true,anomalies:true,heatmap:false};
+let map, allData={zones:[],fires:[],stations:[],incidents:[],anomalies:[],vegetation:[],atmosphere:[],risks:[]};
+let grps={zones:null,fires:null,stations:null,incidents:null,anomalies:null,ndvi:null,no2:null,risks:null,heatmap:null};
+let vis={zones:true,fires:true,stations:true,incidents:true,anomalies:true,ndvi:false,no2:false,risks:false,heatmap:false};
 let activeSeverities=new Set(['CRITICAL','HIGH','MEDIUM','LOW']);
 let autoRefreshInterval=null;
+let filterPanelVisible=true, statsPanelVisible=true;
 
 // ── MAP INIT ──
 map=L.map('map',{zoomControl:false}).setView([17.5,-3.0],6);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
-// Dark map tiles
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom:18,subdomains:'abcd'
@@ -302,7 +356,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
 function fireIcon(conf){
     const colors={high:'#DC2626',nominal:'#F97316',low:'#EAB308'};
     const c=colors[conf]||'#F97316';
-    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 8px ${c}80"></div>`,iconSize:[14,14],className:''});
+    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 10px ${c}90"></div>`,iconSize:[14,14],className:''});
 }
 function stationIcon(status){
     const c=status==='ACTIVE'?'#22C55E':status==='DEGRADED'?'#EAB308':'#94A3B8';
@@ -314,9 +368,22 @@ function incidentIcon(sev){
     return L.divIcon({html:`<div style="width:12px;height:12px;background:${c};border-radius:2px;border:2px solid white;transform:rotate(45deg);box-shadow:0 0 6px ${c}60"></div>`,iconSize:[12,12],className:''});
 }
 function anomalyIcon(type){
-    const colors={VEGETATION:'#8B5CF6',CLIMATE:'#3B82F6',ATMOSPHERE:'#A855F7',FIRE:'#F97316',WATER:'#06B6D4'};
+    const colors={VEGETATION:'#8B5CF6',CLIMATE:'#3B82F6',ATMOSPHERE:'#A855F7',FIRE:'#F97316',WATER:'#06B6D4',MULTI_SIGNAL:'#EC4899'};
     const c=colors[type]||'#8B5CF6';
     return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:2px solid white;opacity:0.85"></div>`,iconSize:[10,10],className:''});
+}
+function ndviIcon(val){
+    const c=val>=0.6?'#15803D':val>=0.4?'#22C55E':val>=0.2?'#EAB308':'#DC2626';
+    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:1.5px solid white;opacity:0.8"></div>`,iconSize:[10,10],className:''});
+}
+function no2Icon(val){
+    const c=val>40?'#DC2626':val>20?'#F97316':val>10?'#EAB308':'#22C55E';
+    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:1.5px solid white;opacity:0.8"></div>`,iconSize:[10,10],className:''});
+}
+function riskIcon(level){
+    const colors={RED:'#DC2626',ORANGE:'#F97316',YELLOW:'#EAB308',GREEN:'#22C55E'};
+    const c=colors[level]||'#EAB308';
+    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;opacity:0.85;box-shadow:0 0 8px ${c}60"></div>`,iconSize:[14,14],className:''});
 }
 function zoneColor(zone){
     const iez=zone.current_iez||0;
@@ -328,32 +395,269 @@ function sevBadge(sev){
     const c={CRITICAL:'bg-risk-critical/15 text-risk-critical',HIGH:'bg-risk-high/15 text-risk-high',MEDIUM:'bg-risk-vigil/15 text-risk-vigil',LOW:'bg-risk-normal/15 text-risk-normal'};
     return `<span class="popup-badge ${c[sev]||''}">${sev}</span>`;
 }
+function confBadge(conf){
+    const c={high:'bg-risk-critical/15 text-risk-critical',nominal:'bg-risk-high/15 text-risk-high',low:'bg-risk-vigil/15 text-risk-vigil'};
+    return `<span class="popup-badge ${c[conf]||''}">${conf}</span>`;
+}
+function levelBadge(level){
+    const c={RED:'bg-risk-critical/15 text-risk-critical',ORANGE:'bg-risk-high/15 text-risk-high',YELLOW:'bg-risk-vigil/15 text-risk-vigil',GREEN:'bg-risk-normal/15 text-risk-normal'};
+    return `<span class="popup-badge ${c[level]||''}">${level}</span>`;
+}
+function statusBadge(st){
+    const c={MONITORING:'bg-data-600/15 text-data-600',ALERT:'bg-risk-high/15 text-risk-high',CRITICAL:'bg-risk-critical/15 text-risk-critical',NORMAL:'bg-risk-normal/15 text-risk-normal',ACTIVE:'bg-risk-normal/15 text-risk-normal',DEGRADED:'bg-risk-vigil/15 text-risk-vigil',OFFLINE:'bg-ink-faint/15 text-ink-faint',NEW:'bg-satellite/15 text-satellite',INVESTIGATING:'bg-data-600/15 text-data-600',CONFIRMED:'bg-risk-high/15 text-risk-high',RESOLVED:'bg-risk-normal/15 text-risk-normal',DISMISSED:'bg-ink-faint/15 text-ink-faint'};
+    return `<span class="popup-badge ${c[st]||'bg-surface-soft text-ink-muted'}">${st}</span>`;
+}
+function iezColor(val){return val>=85?'#22C55E':val>=65?'#EAB308':val>=40?'#F97316':'#DC2626';}
+function ndviColor(val){return val>=0.6?'#15803D':val>=0.4?'#22C55E':val>=0.2?'#EAB308':'#DC2626';}
+function ndviBar(val){return `<div class="popup-bar"><div class="popup-bar-fill" style="width:${Math.max(0,Math.min(100,val*100))}%;background:${ndviColor(val)}"></div></div>`;}
+function iezBar(val){return `<div class="popup-bar"><div class="popup-bar-fill" style="width:${Math.max(0,Math.min(100,val))}%;background:${iezColor(val)}"></div></div>`;}
+function sparkline(data,color){
+    if(!data||!data.length)return '';
+    const max=Math.max(...data,1);
+    const bars=data.map(v=>`<div style="height:${Math.max(2,Math.round(v/max*20))}px;background:${color}"></div>`).join('');
+    return `<div class="popup-sparkline">${bars}</div>`;
+}
+function formatDate(d){
+    if(!d)return '—';
+    try{return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'});}
+    catch(e){return d;}
+}
+function formatDateTime(d){
+    if(!d)return '—';
+    try{return new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+    catch(e){return d;}
+}
+function riskLevel(score){return score>=75?'CRITIQUE':score>=50?'ELEVE':score>=25?'MOYEN':'FAIBLE';}
+function riskColor(score){return score>=75?'#DC2626':score>=50?'#F97316':score>=25?'#EAB308':'#22C55E';}
+
+// ── POPUP BUILDERS ──
+function zonePopup(z){
+    const iez=z.current_iez||0;
+    const c=iezColor(iez);
+    const ndvi=z.ndvi;
+    const temp=z.temperature;
+    const precip=z.precipitation_7d;
+    const aq=z.air_quality;
+    const risk=z.risk;
+    const iezH=z.iez_history;
+
+    let sections='';
+
+    // Satellite data section
+    if(ndvi||temp||precip||aq){
+        sections+='<div class="popup-section"><div class="popup-section-title">Donnees satellite</div><div class="popup-grid">';
+        if(ndvi) sections+=`<div class="popup-row"><span>NDVI</span><span style="color:${ndviColor(ndvi.value)}">${ndvi.value}</span></div>`;
+        if(temp) sections+=`<div class="popup-row"><span>Temperature</span><span>${temp.value}${temp.unit||'°C'}</span></div>`;
+        if(precip) sections+=`<div class="popup-row"><span>Precip. 7j</span><span>${precip.value} mm</span></div>`;
+        if(aq) sections+=`<div class="popup-row"><span>${aq.variable}</span><span>${aq.value} ${aq.unit}</span></div>`;
+        sections+='</div>';
+        if(ndvi&&ndvi.source) sections+=`<div class="popup-source"><i class="fas fa-satellite-dish"></i> ${ndvi.source} — ${formatDate(ndvi.date)}</div>`;
+        sections+='</div>';
+    }
+
+    // Risk section
+    if(risk){
+        sections+=`<div class="popup-section"><div class="popup-section-title">Analyse de risque</div>
+            <div class="popup-row"><span>Type</span><span>${(risk.type||'').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Score</span><span style="color:${riskColor(risk.score)};font-weight:700">${risk.score}/100</span></div>
+            <div class="popup-row"><span>Niveau</span>${levelBadge(risk.level)}</div>
+            <div class="popup-bar"><div class="popup-bar-fill" style="width:${risk.score}%;background:${riskColor(risk.score)}"></div></div>
+        </div>`;
+    }
+
+    // IEZ sparkline
+    if(iezH&&iezH.length>1){
+        sections+=`<div class="popup-section"><div class="popup-section-title">Evolution IEZ</div>${sparkline(iezH,'#22C55E')}</div>`;
+    }
+
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:${c};font-size:18px">◉</span> ${z.name}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Type</span><span>${(z.zone_type||'-').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Statut</span>${statusBadge(z.status)}</div>
+            <div class="popup-row"><span>IEZ</span><span style="color:${c};font-weight:700">${iez}</span></div>
+            <div class="popup-row"><span>Vulnerabilite</span><span>${(z.vulnerability_level||'-')}</span></div>
+        </div>
+        ${iezBar(iez)}
+        ${sections}
+        <a href="/zones/${z.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Voir details complets</a>
+    </div>`;
+}
+
+function firePopup(f){
+    const date=formatDateTime(f.detected_at);
+    const sat=f.satellite||'MODIS';
+    const dn=f.daynight==='D'?'Jour':'Nuit';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:#DC2626;font-size:16px">🔥</span> Feu actif</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Confiance</span>${confBadge(f.confidence||'nominal')}</div>
+            <div class="popup-row"><span>Satellite</span><span>${sat}</span></div>
+            <div class="popup-row"><span>FRP</span><span>${f.frp||'-'} MW</span></div>
+            <div class="popup-row"><span>Luminosite</span><span>${f.brightness||'-'} K</span></div>
+            <div class="popup-row"><span>Periode</span><span>${dn}</span></div>
+            <div class="popup-row"><span>Detection</span><span>${date}</span></div>
+        </div>
+        <div class="popup-source"><i class="fas fa-satellite-dish"></i> NASA FIRMS — ${sat}</div>
+    </div>`;
+}
+
+function stationPopup(s){
+    const bat=s.battery_level!=null?`${s.battery_level}%`:'—';
+    const batColor=s.battery_level>60?'#22C55E':s.battery_level>30?'#EAB308':'#DC2626';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:#2563EB;font-size:14px">📡</span> ${s.code}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Nom</span><span>${s.name}</span></div>
+            <div class="popup-row"><span>Statut</span>${statusBadge(s.status)}</div>
+            <div class="popup-row"><span>Batterie</span><span style="color:${batColor}">${bat}</span></div>
+            <div class="popup-row"><span>Type</span><span>${s.is_simulated?'Simule':'Reel'}</span></div>
+        </div>
+        <div class="popup-bar"><div class="popup-bar-fill" style="width:${s.battery_level||0}%;background:${batColor}"></div></div>
+        <a href="/stations/${s.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Voir details</a>
+    </div>`;
+}
+
+function incidentPopup(inc){
+    const date=formatDateTime(inc.detected_at);
+    const desc=inc.description?inc.description.substring(0,100)+(inc.description.length>100?'...':''):'';
+    const riskVal=inc.risk_score!=null?`<div class="popup-row"><span>Score risque</span><span style="color:${riskColor(inc.risk_score)}">${inc.risk_score}/100</span></div>`:'';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:#F97316;font-size:14px">⚠</span> ${inc.title}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Type</span><span>${(inc.incident_type||'-').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Severite</span>${sevBadge(inc.severity)}</div>
+            <div class="popup-row"><span>Statut</span>${statusBadge(inc.status||'NEW')}</div>
+            ${riskVal}
+            <div class="popup-row"><span>Detection</span><span>${date}</span></div>
+        </div>
+        ${desc?`<div style="margin-top:4px;font-size:11px;color:#64748b;line-height:1.4">${desc}</div>`:''}
+        <a href="/incidents/${inc.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Voir details &amp; analyser</a>
+    </div>`;
+}
+
+function anomalyPopup(a){
+    const zone=(allData.zones||[]).find(z=>z.id===a.zone_id);
+    const zName=zone?zone.name:'—';
+    const metric=a.metric||'—';
+    const cur=a.current_value!=null?a.current_value:'—';
+    const base=a.baseline_value!=null?a.baseline_value:'—';
+    const score=a.score!=null?`${a.score}/100`:'—';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:#8B5CF6;font-size:14px">🔍</span> Anomalie</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Type</span><span>${(a.anomaly_type||'-').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Severite</span>${sevBadge(a.severity)}</div>
+            <div class="popup-row"><span>Score</span><span>${score}</span></div>
+            <div class="popup-row"><span>Zone</span><span>${zName}</span></div>
+            <div class="popup-row"><span>Metric</span><span>${metric}</span></div>
+            <div class="popup-row"><span>Valeur</span><span>${cur}</span></div>
+            <div class="popup-row"><span>Baseline</span><span>${base}</span></div>
+            <div class="popup-row"><span>Date</span><span>${formatDate(a.detected_at)}</span></div>
+        </div>
+    </div>`;
+}
+
+function ndviPopup(v){
+    const zone=(allData.zones||[]).find(z=>z.id===v.zone_id);
+    const zName=zone?zone.name:'—';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:${ndviColor(v.value)};font-size:14px">🌿</span> NDVI — ${zName}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Valeur</span><span style="color:${ndviColor(v.value)};font-weight:700">${v.value}</span></div>
+            <div class="popup-row"><span>Source</span><span>${v.source||'Sentinel-2'}</span></div>
+            <div class="popup-row"><span>Date</span><span>${formatDate(v.acquisition_date)}</span></div>
+        </div>
+        ${ndviBar(v.value)}
+        <div class="popup-source"><i class="fas fa-satellite-dish"></i> ${v.source||'Sentinel-2/Landsat'} — Indice de vegetation</div>
+    </div>`;
+}
+
+function no2Popup(p){
+    const zone=(allData.zones||[]).find(z=>z.id===p.zone_id);
+    const zName=zone?zone.name:'—';
+    const valColor=p.value>40?'#DC2626':p.value>20?'#F97316':p.value>10?'#EAB308':'#22C55E';
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:#A855F7;font-size:14px">🌫</span> ${p.variable} — ${zName}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Valeur</span><span style="color:${valColor};font-weight:700">${p.value} ${p.unit}</span></div>
+            <div class="popup-row"><span>Date</span><span>${formatDate(p.observed_at)}</span></div>
+        </div>
+        <div class="popup-source"><i class="fas fa-satellite-dish"></i> Sentinel-5P / OpenAQ</div>
+    </div>`;
+}
+
+function riskPopup(r){
+    const zone=(allData.zones||[]).find(z=>z.id===r.zone_id);
+    const zName=zone?zone.name:'—';
+    let factorsHtml='';
+    if(r.factors){
+        try{
+            const factors=typeof r.factors==='string'?JSON.parse(r.factors):r.factors;
+            if(typeof factors==='object'&&factors!==null){
+                const keys=Object.keys(factors).slice(0,4);
+                factorsHtml=keys.map(k=>`<div class="popup-row"><span>${k.replace(/_/g,' ')}</span><span>${typeof factors[k]==='number'?factors[k].toFixed(1):factors[k]}</span></div>`).join('');
+            }
+        }catch(e){}
+    }
+    return `<div class="map-popup">
+        <div class="popup-title"><span style="color:${riskColor(r.risk_score)};font-size:14px">🛡</span> Risque — ${zName}</div>
+        <div class="popup-grid">
+            <div class="popup-row"><span>Type</span><span>${(r.risk_type||'-').replace(/_/g,' ')}</span></div>
+            <div class="popup-row"><span>Score</span><span style="color:${riskColor(r.risk_score)};font-weight:700">${r.risk_score}/100</span></div>
+            <div class="popup-row"><span>Niveau</span>${levelBadge(r.level)}</div>
+            <div class="popup-row"><span>Severite</span>${sevBadge(r.severity)}</div>
+            <div class="popup-row"><span>Date</span><span>${formatDate(r.calculated_at)}</span></div>
+        </div>
+        ${factorsHtml?`<div class="popup-section"><div class="popup-section-title">Facteurs</div>${factorsHtml}</div>`:''}
+        <div class="popup-bar"><div class="popup-bar-fill" style="width:${r.risk_score}%;background:${riskColor(r.risk_score)}"></div></div>
+    </div>`;
+}
 
 // ── LOAD DATA ──
 function loadMapData(){
     return fetch('/api/map/').then(r=>r.json()).then(d=>{
         allData=d;
-        const counts={zones:(d.zones||[]).length,fires:(d.fires||[]).length,stations:(d.stations||[]).length,incidents:(d.incidents||[]).length,anomalies:(d.anomalies||[]).length};
+        const counts={
+            zones:(d.zones||[]).length,fires:(d.fires||[]).length,
+            stations:(d.stations||[]).length,incidents:(d.incidents||[]).length,
+            anomalies:(d.anomalies||[]).length,vegetation:(d.vegetation||[]).length,
+            atmosphere:(d.atmosphere||[]).length,risks:(d.risks||[]).length
+        };
         document.getElementById('map-status').textContent=
-            `${counts.zones} zones | ${counts.fires} feux | ${counts.stations} stations | ${counts.incidents} incidents | ${counts.anomalies} anomalies`;
+            `${counts.zones} zones | ${counts.fires} feux | ${counts.stations} stations | ${counts.incidents} incidents | ${counts.anomalies} anomalies | ${counts.vegetation} NDVI | ${counts.atmosphere} atmo | ${counts.risks} risques`;
         document.getElementById('last-update').textContent='Mis a jour: '+new Date().toLocaleTimeString('fr-FR');
         
-        // Update stats panel
+        // Stats panel
         document.getElementById('stat-zones').textContent=counts.zones;
         document.getElementById('stat-fires').textContent=counts.fires;
         document.getElementById('stat-incidents').textContent=counts.incidents;
         document.getElementById('stat-anomalies').textContent=counts.anomalies;
+
+        // Avg NDVI
+        const ndviVals=(d.zones||[]).filter(z=>z.ndvi).map(z=>z.ndvi.value);
+        if(ndviVals.length){
+            const avgNdvi=ndviVals.reduce((a,b)=>a+b,0)/ndviVals.length;
+            document.getElementById('stat-ndvi').textContent=avgNdvi.toFixed(2);
+        }
+
+        // Latest NO2
+        const no2Vals=(d.atmosphere||[]).filter(p=>p.variable==='NO2');
+        if(no2Vals.length){
+            const latestNo2=no2Vals[0];
+            document.getElementById('stat-no2').textContent=`${latestNo2.value} ${latestNo2.unit}`;
+        }
         
         buildLayers();
         applyFilters();
     }).catch(e=>{
-        document.getElementById('map-status').textContent='Erreur de chargement';
+        document.getElementById('map-status').textContent='Erreur de chargement: '+e.message;
     });
 }
 
 // ── BUILD LAYERS ──
 function buildLayers(){
-    // Zones — CircleMarker with IEZ color
+    // Zones
     if(grps.zones)map.removeLayer(grps.zones);
     grps.zones=L.layerGroup();
     (allData.zones||[]).forEach(z=>{
@@ -363,14 +667,7 @@ function buildLayers(){
             radius:14,color:c,fillColor:c,fillOpacity:0.25,weight:3
         });
         m._data={...z,_layer:'zones'};
-        m.bindPopup(`<div class="map-popup">
-            <div class="popup-title">${z.name}</div>
-            <div class="popup-row"><span>Type</span><span>${z.zone_type||'-'}</span></div>
-            <div class="popup-row"><span>IEZ</span><span style="font-weight:700;color:${c}">${z.current_iez}</span></div>
-            <div class="popup-row"><span>Statut</span>${sevBadge(z.status)}</div>
-            <div class="popup-row"><span>Vulnerabilite</span><span>${z.vulnerability_level||'-'}</span></div>
-            <div class="mt-2"><a href="/zones/${z.id}/" class="text-xs text-territory-600 hover:underline">Voir details →</a></div>
-        </div>`);
+        m.bindPopup(zonePopup(z),{maxWidth:320,maxHeight:400});
         m.on('mouseover',function(){showZoneInfo(z);});
         m.addTo(grps.zones);
     });
@@ -378,9 +675,7 @@ function buildLayers(){
     // Fires — clusterized
     if(grps.fires)map.removeLayer(grps.fires);
     grps.fires=L.markerClusterGroup({
-        maxClusterRadius:40,
-        spiderfyOnMaxZoom:true,
-        showCoverageOnHover:false,
+        maxClusterRadius:40,spiderfyOnMaxZoom:true,showCoverageOnHover:false,
         iconCreateFunction:function(cluster){
             const count=cluster.getChildCount();
             const size=count<10?'small':count<50?'medium':'large';
@@ -390,13 +685,7 @@ function buildLayers(){
     (allData.fires||[]).forEach(f=>{
         const m=L.marker([f.latitude,f.longitude],{icon:fireIcon(f.confidence)});
         m._data={...f,_layer:'fires'};
-        const date=f.detected_at?new Date(f.detected_at).toLocaleDateString('fr-FR'):'-';
-        m.bindPopup(`<div class="map-popup">
-            <div class="popup-title">🔥 Feu actif</div>
-            <div class="popup-row"><span>Confiance</span>${sevBadge(f.confidence?.toUpperCase()||'MEDIUM')}</div>
-            <div class="popup-row"><span>FRP</span><span>${f.frp||'-'} MW</span></div>
-            <div class="popup-row"><span>Date</span><span>${date}</span></div>
-        </div>`);
+        m.bindPopup(firePopup(f),{maxWidth:300});
         m.addTo(grps.fires);
     });
 
@@ -407,11 +696,7 @@ function buildLayers(){
         if(!s.latitude||!s.longitude)return;
         const m=L.marker([s.latitude,s.longitude],{icon:stationIcon(s.status)});
         m._data={...s,_layer:'stations'};
-        m.bindPopup(`<div class="map-popup">
-            <div class="popup-title">📡 ${s.code}</div>
-            <div class="popup-row"><span>Nom</span><span>${s.name}</span></div>
-            <div class="popup-row"><span>Statut</span>${sevBadge(s.status)}</div>
-        </div>`);
+        m.bindPopup(stationPopup(s),{maxWidth:300});
         m.addTo(grps.stations);
     });
 
@@ -422,14 +707,7 @@ function buildLayers(){
         if(!inc.latitude||!inc.longitude)return;
         const m=L.marker([inc.latitude,inc.longitude],{icon:incidentIcon(inc.severity)});
         m._data={...inc,_layer:'incidents'};
-        const date=inc.detected_at?new Date(inc.detected_at).toLocaleDateString('fr-FR'):'-';
-        m.bindPopup(`<div class="map-popup">
-            <div class="popup-title">⚠ ${inc.title}</div>
-            <div class="popup-row"><span>Type</span><span>${(inc.incident_type||'-').replace(/_/g,' ')}</span></div>
-            <div class="popup-row"><span>Severite</span>${sevBadge(inc.severity)}</div>
-            <div class="popup-row"><span>Date</span><span>${date}</span></div>
-            <div class="mt-2"><a href="/incidents/${inc.id}/" class="text-xs text-risk-high hover:underline">Voir details →</a></div>
-        </div>`);
+        m.bindPopup(incidentPopup(inc),{maxWidth:320});
         m.addTo(grps.incidents);
     });
 
@@ -442,13 +720,41 @@ function buildLayers(){
         const offset=Math.random()*0.3-0.15;
         const m=L.marker([zone.latitude+offset,zone.longitude+offset],{icon:anomalyIcon(a.anomaly_type)});
         m._data={...a,_layer:'anomalies'};
-        m.bindPopup(`<div class="map-popup">
-            <div class="popup-title">🔍 Anomalie</div>
-            <div class="popup-row"><span>Type</span><span>${a.anomaly_type}</span></div>
-            <div class="popup-row"><span>Severite</span>${sevBadge(a.severity)}</div>
-            <div class="popup-row"><span>Zone</span><span>${zone.name}</span></div>
-        </div>`);
+        m.bindPopup(anomalyPopup(a),{maxWidth:320});
         m.addTo(grps.anomalies);
+    });
+
+    // NDVI vegetation points
+    if(grps.ndvi)map.removeLayer(grps.ndvi);
+    grps.ndvi=L.layerGroup();
+    (allData.vegetation||[]).forEach(v=>{
+        if(!v.latitude||!v.longitude||v.value==null)return;
+        const m=L.marker([v.latitude,v.longitude],{icon:ndviIcon(v.value)});
+        m._data={...v,_layer:'ndvi'};
+        m.bindPopup(ndviPopup(v),{maxWidth:300});
+        m.addTo(grps.ndvi);
+    });
+
+    // NO2 / Air quality points
+    if(grps.no2)map.removeLayer(grps.no2);
+    grps.no2=L.layerGroup();
+    (allData.atmosphere||[]).forEach(p=>{
+        if(!p.latitude||!p.longitude||p.value==null)return;
+        const m=L.marker([p.latitude,p.longitude],{icon:no2Icon(p.value)});
+        m._data={...p,_layer:'no2'};
+        m.bindPopup(no2Popup(p),{maxWidth:300});
+        m.addTo(grps.no2);
+    });
+
+    // Risk zones
+    if(grps.risks)map.removeLayer(grps.risks);
+    grps.risks=L.layerGroup();
+    (allData.risks||[]).forEach(r=>{
+        if(!r.latitude||!r.longitude)return;
+        const m=L.marker([r.latitude,r.longitude],{icon:riskIcon(r.level)});
+        m._data={...r,_layer:'risks'};
+        m.bindPopup(riskPopup(r),{maxWidth:320});
+        m.addTo(grps.risks);
     });
 
     // Heatmap
@@ -520,9 +826,12 @@ function resetFilters(){
     document.getElementById('filter-zone-type').value='';
     document.getElementById('search-zone').value='';
     
-    Object.keys(vis).forEach(k=>vis[k]=true);
-    document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=true);
-    document.querySelectorAll('.layer-btn').forEach(b=>b.classList.add('active'));
+    Object.keys(vis).forEach(k=>vis[k]=false);
+    ['zones','fires','stations','incidents','anomalies'].forEach(k=>vis[k]=true);
+    document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+    ['zones','fires','stations','incidents','anomalies'].forEach(k=>{const cb=document.getElementById('layer-'+k);if(cb)cb.checked=true;});
+    document.querySelectorAll('.layer-btn').forEach(b=>b.classList.remove('active'));
+    ['zones','fires','stations','incidents','anomalies'].forEach(k=>{const btn=document.getElementById('btn-'+k);if(btn)btn.classList.add('active');});
     
     Object.keys(grps).forEach(k=>{
         if(!grps[k])return;
@@ -536,11 +845,9 @@ function resetFilters(){
 function toggleLayer(name){
     vis[name]=!vis[name];
     
-    // Update checkbox
     const cb=document.getElementById('layer-'+name);
     if(cb)cb.checked=vis[name];
     
-    // Update bottom bar button
     const btn=document.getElementById('btn-'+name);
     if(btn){
         if(vis[name])btn.classList.add('active');
@@ -567,7 +874,6 @@ function toggleStatsPanel(){
     statsPanelVisible=!statsPanelVisible;
     p.className='stats-panel '+(statsPanelVisible?'expanded absolute right-0':'collapsed absolute right-0');
 }
-let filterPanelVisible=true, statsPanelVisible=true;
 
 // ── ZONE HOVER INFO ──
 function showZoneInfo(z){
@@ -576,11 +882,19 @@ function showZoneInfo(z){
     el.classList.remove('hidden');
     const iez=z.current_iez||0;
     const color=iez>=85?'text-risk-normal':iez>=65?'text-risk-vigil':iez>=40?'text-risk-high':'text-risk-critical';
+
+    let extra='';
+    if(z.ndvi) extra+=`<div class="flex justify-between"><span>NDVI</span><span style="color:${ndviColor(z.ndvi.value)}" class="font-semibold">${z.ndvi.value}</span></div>`;
+    if(z.temperature) extra+=`<div class="flex justify-between"><span>Temperature</span><span class="font-semibold">${z.temperature.value}°C</span></div>`;
+    if(z.air_quality) extra+=`<div class="flex justify-between"><span>${z.air_quality.variable}</span><span class="font-semibold">${z.air_quality.value} ${z.air_quality.unit}</span></div>`;
+    if(z.risk) extra+=`<div class="flex justify-between"><span>Risque</span><span style="color:${riskColor(z.risk.score)}" class="font-semibold">${z.risk.score}/100</span></div>`;
+
     content.innerHTML=`
         <div class="font-semibold">${z.name}</div>
-        <div class="flex justify-between mt-1"><span>Type</span><span>${z.zone_type||'-'}</span></div>
+        <div class="flex justify-between mt-1"><span>Type</span><span>${(z.zone_type||'-').replace(/_/g,' ')}</span></div>
         <div class="flex justify-between"><span>IEZ</span><span class="font-bold ${color}">${iez}</span></div>
         <div class="flex justify-between"><span>Statut</span><span>${z.status}</span></div>
+        ${extra}
     `;
 }
 

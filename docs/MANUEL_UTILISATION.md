@@ -81,7 +81,7 @@ Le Mali fait face à des menaces environnementales croissantes :
 | Frontend | Django Templates + Tailwind CSS CDN | Interface responsive |
 | Cartographie | Leaflet.js | Visualisation cartographique interactive |
 | Graphiques | Chart.js | Tableaux de bord visuels |
-| Intelligence artificielle | Groq API (Llama 3.3 70B) | Analyse et recommandations |
+| Intelligence artificielle | Groq API (compound) | Analyse et recommandations |
 
 ### 2.2 Pipeline de Traitement
 
@@ -187,7 +187,7 @@ MonitoringZone (zone géographique)
 - **Utilisation** : Corrélation avec les données satellitaires Sentinel-5P
 
 #### 3.2.7 Groq AI — Intelligence Artificielle
-- **Modèle** : Llama 3.3 70B via Groq (latence < 1s)
+- **Modèle** : Compound via Groq (latence < 1s)
 - **Utilisation** : Interprétation des incidents, recommandations contextuelles
 - **Limites** : Ne prend pas de décision — explique, contextualise, recommande
 
@@ -266,31 +266,87 @@ Score composite (0-100) de santé globale de l'écosystème, calculé à partir 
 
 Le dashboard affiche en temps réel :
 
-- **Carte interactive** (Leaflet) avec tous les points de surveillance
-- **Scores de risque** par zone (codes couleur)
-- **Graphiques** d'évolution des indices NDVI, NDWI, température
-- **Alertes actives** triées par priorité
-- **Statistiques globales** : nombre de zones, feux actifs, risque moyen
+- **KPIs principaux** : IEZ national, feux actifs, incidents, anomalies, stations, alertes
+- **Graphiques** : Donut IEZ, incidents par type, feux (7 jours), IEZ par zone, incidents récents
+- **Mini-carte** avec zones et feux
+- **Sources de données** : NASA FIRMS (Active), Sentinel-2/Landsat (NDVI), NASA POWER (Climat), Sentinel-5P/OpenAQ (Qualité air)
 
-### 5.2 Navigation
+### 5.2 Carte Interactive
+
+La carte interactive (`/carte/`) est l'outil central de surveillance, alimentée en temps réel par toutes les sources de données.
+
+#### 8 Couches Disponibles
+
+| Couche | Description | Source | Couleur |
+|--------|-------------|--------|---------|
+| **Zones (IEZ)** | 13 zones de surveillance avec score IEZ | Base de données | Vert/Jaune/Orange/Rouge |
+| **Feux FIRMS** | Points chauds actifs (7 jours) | NASA FIRMS | Rouge/Orange/Jaune par confiance |
+| **Stations** | 24 stations de surveillance IoT | Capteurs simulés | Vert=Active, Jaune=Dégradée |
+| **Incidents** | Incidents environnementaux actifs | Base de données | Losange coloré par sévérité |
+| **Anomalies** | Anomalies détectées (30 jours) | Moteur d'anomalies | Violet/Orange/Cyan par type |
+| **NDVI Végétation** | Points NDVI réels par zone | Sentinel-2 / Landsat | Vert dense → Rouge bare |
+| **Qualité Air (NO2)** | Mesures NO2/PM25/PM10 | Sentinel-5P / OpenAQ | Vert → Rouge par concentration |
+| **Zones à risque** | Évaluations de risque | RiskEngine | Vert/Jaune/Orange/Rouge par niveau |
+| **Heatmap feux** | Densité thermique des feux | NASA FIRMS | Dégradé bleu → rouge |
+
+#### Popups Enrichis
+
+Chaque élément de la carte dispose de popups détaillés :
+
+- **Zones** : Nom, type, IEZ avec barre de progression, statut, vulnérabilité, données satellite (NDVI, température, précipitations, qualité air), analyse de risque avec score, évolution IEZ (sparkline), lien vers détails
+- **Feux** : Confiance, satellite (MODIS/VIIRS), FRP (MW), luminosité (K), période (jour/nuit), date
+- **Stations** : Code, nom, statut, batterie avec barre de progression
+- **Incidents** : Type, sévérité, statut, score de risque, description, date, lien vers analyse IA
+- **Anomalies** : Type, sévérité, score, metric, valeur vs baseline
+- **NDVI** : Valeur, source (Sentinel-2/Landsat), date, barre de progression
+- **Qualité air** : Variable, valeur avec unité, date
+- **Risques** : Type, score/100, niveau, sévérité, facteurs détaillés
+
+#### Filtres et Contrôles
+
+- **Recherche de zone** par nom (zoom automatique)
+- **Filtres par sévérité** : Critique, Élevé, Moyen, Faible
+- **Filtre par type d'incident** : Incendie, Sécheresse, Pollution eau, Végétation, Atmosphère, Canicule, Stress hydrique
+- **Filtre par confiance des feux** : Haute, Moyenne, Basse
+- **Filtre par type de zone** : Urbaine, Forêt, Zone humide, Agricole, Savane, Désert, Rivière, Lac
+- **Auto-refresh** toutes les 60 secondes
+- **Panneaux repliables** : Filtres (gauche) et Statistiques (droite)
+
+#### Statistiques en Temps Réel
+
+Le panneau droit affiche :
+- Nombre de zones, feux, incidents, anomalies
+- NDVI moyen toutes zones confondues
+- Dernière mesure NO2
+- Zone survolée avec données complètes (NDVI, température, NO2, risque)
+
+### 5.3 Navigation
+
+La sidebar gauche persiste sur toutes les pages :
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  ECO-SURVEILLANCE MALI          [Dashboard] [Carte] [API]│
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
-│  │ Feux     │  │ Végétat° │  │ Climat   │  │Qualité  │ │
-│  │ (FIRMS)  │  │ (NDVI)   │  │ (POWER)  │  │ air     │ │
-│  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
-│                                                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
-│  │Risques   │  │ Anomalies│  │ Satellit │  │Incidents│ │
-│  │ (auto)   │  │ (auto)   │  │ (S2/L8)  │  │(alertes)│ │
-│  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────┐
+│  ECO-SURVEILLANCE    │
+│  MALI MVP            │
+├──────────────────────┤
+│ Navigation           │
+│  ◉ Dashboard         │
+│  ◉ Carte             │
+│  ◉ Zones             │
+├──────────────────────┤
+│ Surveillance         │
+│  🔥 Feux (compteur)  │
+│  ⚠ Incidents (comp.) │
+│  🔍 Anomalies        │
+├──────────────────────┤
+│ Infrastructure       │
+│  📡 Stations         │
+├──────────────────────┤
+│ ⚙ Administration    │
+└──────────────────────┘
 ```
+
+Les compteurs de feux et incidents s'affichent automatiquement en haut à droite de la sidebar quand il y a des éléments actifs.
 
 ---
 
@@ -302,76 +358,72 @@ L'API est accessible via HTTP sur le port configuré (défaut : 8000).
 
 | Méthode | Endpoint | Description | Données retournées |
 |---------|----------|-------------|-------------------|
-| GET | `/api/dashboard/` | Tableau de bord global | Zones, alertes, risque moyen |
-| GET | `/api/map/` | Données cartographiques | Géométries, scores, feux |
-| GET | `/api/vegetation/` | Indices de végétation | NDVI, NDWI, NBR, NDMI par zone |
-| GET | `/api/climate/` | Données climatiques | Temp, pluie, humidité, vent |
-| GET | `/api/iez/` | Indice d'Éco-Zone | Score IEZ par zone |
-| GET | `/api/air-quality/` | Qualité de l'air | SO2, O3, NO2, AER_AI |
-| GET | `/api/risk/` | Évaluations de risque | Score et niveau par zone |
+| GET | `/api/dashboard/` | Tableau de bord global | Zones, alertes, feux, risque moyen, NDVI, précipitations |
+| GET | `/api/map/` | **Données cartographiques complètes** | Zones (avec NDVI, temp, pluie, air, risque, historique IEZ), feux, stations, incidents, anomalies, végétation, atmosphère, risques |
+| GET | `/api/vegetation/` | Indices de végétation | NDVI quotidien (30 jours) |
+| GET | `/api/climate/` | Données climatiques | Température et précipitations quotidiennes (30 jours) |
+| GET | `/api/iez/` | Indice d'Éco-Zone | Score IEZ par zone (50 derniers) |
+| GET | `/api/air-quality/` | Qualité de l'air | PM25, PM10, NO2, O3 quotidiens (30 jours) |
+| GET | `/api/risk/` | Évaluations de risque | Score, niveau, facteurs par zone |
 | GET | `/api/satellite/` | Observations satellite | Méta-informations Sentinel/Landsat |
 | GET | `/api/zones/` | Zones de surveillance | Liste des zones avec coordonnées |
-| GET | `/api/fires/` | Détections de feux | Points chauds FIRMS |
-| GET | `/api/stations/` | Stations de surveillance | Capteurs et stations |
-| GET | `/api/incidents/` | Incidents | Incidents enregistrés |
-| GET | `/api/alertes/` | Alertes actives | Alertes par niveau et type |
-| POST | `/incidents/{id}/analyze/` | Analyse IA d'un incident | Recommandations Groq AI |
+| GET | `/api/fires/` | Détections de feux | 100 derniers points chauds FIRMS |
+| GET | `/api/stations/` | Stations de surveillance | 24 stations avec statut et batterie |
+| GET | `/api/incidents/` | Incidents | 100 derniers incidents actifs |
+| GET | `/api/alerts/` | Alertes actives | Alertes par niveau et type |
+| POST | `/api/incidents/{id}/analyze/` | Analyse IA d'un incident | Recommandations Groq AI |
 
-### 6.2 Exemples d'Utilisation
+### 6.2 Données de la Carte (`/api/map/`)
+
+L'endpoint `/api/map/` retourne toutes les données nécessaires à la carte interactive :
+
+```json
+{
+  "zones": [
+    {
+      "id": 1,
+      "name": "Bamako Centre",
+      "zone_type": "URBAN",
+      "current_iez": 60.7,
+      "status": "MONITORING",
+      "latitude": 12.6392,
+      "longitude": -8.0029,
+      "vulnerability_level": "HIGH",
+      "area_km2": 250,
+      "population": 3000000,
+      "ndvi": {"value": 0.443, "source": "Sentinel-2", "date": "2026-08-17"},
+      "temperature": {"value": 35.6, "unit": "C"},
+      "precipitation_7d": {"value": 179.4, "unit": "mm"},
+      "air_quality": {"variable": "NO2", "value": 0.0, "unit": "mol/m²"},
+      "risk": {"type": "WILDFIRE", "score": 85.8, "level": "RED", "severity": "CRITICAL"},
+      "iez_history": [60.7]
+    }
+  ],
+  "fires": [...],
+  "stations": [...],
+  "incidents": [...],
+  "anomalies": [...],
+  "vegetation": [{"id": 1, "value": 0.443, "source": "Sentinel-2", "acquisition_date": "2026-08-17", "zone_id": 1, "latitude": 12.6392, "longitude": -8.0029}],
+  "atmosphere": [{"id": 1, "variable": "NO2", "value": 0.0, "unit": "mol/m²", "observed_at": "...", "zone_id": 1, "latitude": 12.6392, "longitude": -8.0029}],
+  "risks": [{"id": 1, "risk_type": "WILDFIRE", "risk_score": 85.8, "level": "RED", "severity": "CRITICAL", "calculated_at": "...", "zone_id": 1, "factors": [...], "latitude": 12.6392, "longitude": -8.0029}]
+}
+```
+
+### 6.3 Exemples d'Utilisation
+
+#### Récupérer les données de la carte
+```bash
+curl -X GET http://localhost:8000/api/map/
+```
 
 #### Récupérer les alertes actives
 ```bash
-curl -X GET http://localhost:8000/api/alertes/
-```
-
-**Réponse** :
-```json
-[
-  {
-    "id": 1,
-    "zone": "Bamako Nord",
-    "type": "FEU",
-    "niveau": "CRITIQUE",
-    "message": "Feu actif détecté à 12.65°N, -8.01°E",
-    "created_at": "2026-08-19T14:30:00Z"
-  }
-]
-```
-
-#### Récupérer le risque par zone
-```bash
-curl -X GET http://localhost:8000/api/risk/
-```
-
-**Réponse** :
-```json
-[
-  {
-    "zone": "Bamako",
-    "score": 45,
-    "niveau": "ÉLEVÉ",
-    "profile": "FEU_FORET",
-    "details": {
-      "ndvi": 0.32,
-      "temperature": 38.5,
-      "feux_proches": 3
-    }
-  }
-]
+curl -X GET http://localhost:8000/api/alerts/
 ```
 
 #### Analyser un incident avec l'IA
 ```bash
-curl -X POST http://localhost:8000/incidents/1/analyze/
-```
-
-**Réponse** :
-```json
-{
-  "success": true,
-  "summary": "Incident de type feu de forêt détecté dans la zone de Bamako. Le NDVI montre une baisse significative (-0.15) sur les 30 derniers jours. Trois points actifs FIRMS sont identifiés dans un rayon de 5km. Recommandation : déploiement rapide d'équipe d'intervention, surveillance accrue des zones adjacentes.",
-  "model": "groq/compound"
-}
+curl -X POST http://localhost:8000/api/incidents/1/analyze/
 ```
 
 ---
@@ -487,7 +539,7 @@ AWS_SECRET_ACCESS_KEY=<votre-secret-key-aws>
 AWS_REGION=us-east-1
 
 # === CONFIGURATION IA ===
-GROQ_MODEL=groq/compound  # Modèle Groq à utiliser
+GROQ_MODEL=groq/compound  # Modèle compound de Groq
 ```
 
 ### 9.2 Configuration des Fournisseurs
@@ -530,9 +582,9 @@ OPENAQ_API_KEY = config("OPENAQ_API_KEY", default="")
 **Projet ECO-SURVEILLANCE MALI**
 - Auteur : M. Kane
 - Date : Août 2026
-- Version : 1.0
+- Version : 1.1
 - Licence : Projet académique
 
 ---
 
-*Document généré automatiquement — Dernière mise à jour : 19 août 2026*
+*Document généré automatiquement — Dernière mise à jour : 21 août 2026*

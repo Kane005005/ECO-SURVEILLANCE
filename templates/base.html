@@ -260,7 +260,12 @@
 
     // ── Sidebar active link ──
     document.querySelectorAll('.sidebar-link').forEach(link=>{
-        if(window.location.pathname===link.getAttribute('href')){
+        const href=link.getAttribute('href');
+        if(!href)return;
+        const path=window.location.pathname;
+        if(path===href||path===href+'/'){
+            link.classList.add('active');
+        }else if(href!=='/'&&path.startsWith(href)){
             link.classList.add('active');
         }
     });

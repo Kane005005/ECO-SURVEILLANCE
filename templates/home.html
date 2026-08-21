@@ -44,7 +44,7 @@
                 <i class="fas fa-satellite-dish text-territory-600"></i>
             </div>
             <h3 class="font-display font-semibold mb-2">Donnees Multi-sources</h3>
-            <p class="text-sm text-ink-muted">Satellite (FIRMS, Sentinel), climat (NASA POWER), atmosphere, eau, feux, capteurs IoT simules.</p>
+            <p class="text-sm text-ink-muted">Satellite (FIRMS, Sentinel-2, Landsat, Sentinel-5P), climat (NASA POWER), atmosphere (OpenAQ), eau, feux, capteurs IoT simules.</p>
         </div>
         <div class="bg-surface-card rounded-xl p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
             <div class="w-10 h-10 rounded-lg bg-data-100 flex items-center justify-center mb-4">
@@ -74,22 +74,30 @@
         <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center">
             <div class="text-2xl mb-2">🔥</div>
             <div class="font-semibold text-sm">NASA FIRMS</div>
-            <div class="text-xs text-risk-normal mt-1">Active</div>
+            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active
+            </div>
         </div>
         <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-satellite text-center">
             <div class="text-2xl mb-2">🛰</div>
-            <div class="font-semibold text-sm">Sentinel-2</div>
-            <div class="text-xs text-ink-muted mt-1">Non configuree</div>
+            <div class="font-semibold text-sm">Sentinel-2 / Landsat</div>
+            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (NDVI)
+            </div>
         </div>
         <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center">
             <div class="text-2xl mb-2">🌡</div>
             <div class="font-semibold text-sm">NASA POWER</div>
-            <div class="text-xs text-ink-muted mt-1">Non configuree</div>
+            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (Climat)
+            </div>
         </div>
-        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-risk-vigil text-center">
-            <div class="text-2xl mb-2">📡</div>
-            <div class="font-semibold text-sm">Capteurs IoT</div>
-            <div class="text-xs text-risk-normal mt-1">Simules</div>
+        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center">
+            <div class="text-2xl mb-2">🌫</div>
+            <div class="font-semibold text-sm">Sentinel-5P / OpenAQ</div>
+            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (Air)
+            </div>
         </div>
     </div>
 </section>
@@ -108,16 +116,16 @@
                 <div class="text-xs text-ink-muted">Zones surveillees</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-data-600">24</div>
-                <div class="text-xs text-ink-muted">Stations actives</div>
+                <div class="text-2xl font-display font-bold text-data-600">7</div>
+                <div class="text-xs text-ink-muted">Sources de donnees</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-purple-600">144</div>
-                <div class="text-xs text-ink-muted">Capteurs en ligne</div>
+                <div class="text-2xl font-display font-bold text-satellite">3</div>
+                <div class="text-xs text-ink-muted">Satellites relies</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-risk-normal">Active</div>
-                <div class="text-xs text-ink-muted">Mode simulation</div>
+                <div class="text-2xl font-display font-bold text-risk-normal">En temps reel</div>
+                <div class="text-xs text-ink-muted">Mode production</div>
             </div>
         </div>
     </div>
