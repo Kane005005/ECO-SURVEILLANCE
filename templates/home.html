@@ -3,28 +3,28 @@
 
 {% block content %}
 <!-- HERO -->
-<section class="bg-eco-mesh py-16 mb-12 border-b border-surface-border">
+<section class="py-10 sm:py-16 mb-8 sm:mb-12 border-b border-surface-border">
     <div class="max-w-4xl mx-auto text-center">
-        <div class="flex justify-center mb-6">
-            <svg viewBox="0 0 40 40" class="w-16 h-16">
+        <div class="flex justify-center mb-4 sm:mb-6">
+            <svg viewBox="0 0 40 40" class="w-12 h-12 sm:w-16 sm:h-16">
                 <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
                 <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
                 <path d="M14 20 L18 24 L26 16" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                 <circle cx="20" cy="20" r="3" fill="#2563EB"/>
             </svg>
         </div>
-        <h1 class="text-5xl md:text-6xl font-display font-bold mb-4">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-display font-bold mb-3 sm:mb-4">
             <span class="text-eco-gradient">ECO-SURVEILLANCE</span>
             <br><span class="text-ink">MALI</span>
         </h1>
-        <p class="text-xl text-ink-muted mb-8 max-w-2xl mx-auto">
+        <p class="text-base sm:text-xl text-ink-muted mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             Plateforme intelligente de surveillance environnementale multi-sources pour le Mali.
         </p>
-        <div class="flex flex-col sm:flex-row justify-center gap-3">
-            <a href="{% url 'core:dashboard' %}" class="inline-flex items-center justify-center gap-2 bg-territory-700 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-territory-800 transition-colors shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-center gap-3 px-4">
+            <a href="{% url 'core:dashboard' %}" class="inline-flex items-center justify-center gap-2 bg-territory-700 text-white px-5 sm:px-6 py-3 rounded-lg text-sm font-semibold hover:bg-territory-800 transition-colors shadow-sm">
                 <i class="fas fa-chart-line"></i> Dashboard
             </a>
-            <a href="{% url 'core:map' %}" class="inline-flex items-center justify-center gap-2 bg-data-600 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-data-700 transition-colors shadow-sm">
+            <a href="{% url 'core:map' %}" class="inline-flex items-center justify-center gap-2 bg-data-600 text-white px-5 sm:px-6 py-3 rounded-lg text-sm font-semibold hover:bg-data-700 transition-colors shadow-sm">
                 <i class="fas fa-map-marked-alt"></i> Carte Interactive
             </a>
         </div>
@@ -32,70 +32,70 @@
 </section>
 
 <!-- FEATURES -->
-<section class="mb-12">
-    <div class="flex items-center gap-3 mb-6">
-        <span class="section-num text-xs text-ink-muted">01</span>
-        <h2 class="text-lg font-display font-semibold">Fonctionnalites</h2>
+<section class="mb-8 sm:mb-12">
+    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <span class="section-num text-[10px] sm:text-xs text-ink-muted">01</span>
+        <h2 class="text-sm sm:text-lg font-display font-semibold">Fonctionnalites</h2>
         <div class="flex-1 h-px bg-surface-border"></div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-surface-card rounded-xl p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
-            <div class="w-10 h-10 rounded-lg bg-territory-100 flex items-center justify-center mb-4">
-                <i class="fas fa-satellite-dish text-territory-600"></i>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="bg-surface-card rounded-xl p-4 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-territory-100 flex items-center justify-center mb-3 sm:mb-4">
+                <i class="fas fa-satellite-dish text-territory-600 text-sm sm:text-base"></i>
             </div>
-            <h3 class="font-display font-semibold mb-2">Donnees Multi-sources</h3>
-            <p class="text-sm text-ink-muted">Satellite (FIRMS, Sentinel-2, Landsat, Sentinel-5P), climat (NASA POWER), atmosphere (OpenAQ), eau, feux, capteurs IoT simules.</p>
+            <h3 class="font-display font-semibold text-sm mb-1.5 sm:mb-2">Donnees Multi-sources</h3>
+            <p class="text-xs sm:text-sm text-ink-muted">Satellite (FIRMS, Sentinel-2, Landsat, Sentinel-5P), climat (NASA POWER), atmosphere (OpenAQ), eau, feux, capteurs IoT simules.</p>
         </div>
-        <div class="bg-surface-card rounded-xl p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
-            <div class="w-10 h-10 rounded-lg bg-data-100 flex items-center justify-center mb-4">
-                <i class="fas fa-brain text-data-600"></i>
+        <div class="bg-surface-card rounded-xl p-4 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-data-100 flex items-center justify-center mb-3 sm:mb-4">
+                <i class="fas fa-brain text-data-600 text-sm sm:text-base"></i>
             </div>
-            <h3 class="font-display font-semibold mb-2">Analyse Intelligente</h3>
-            <p class="text-sm text-ink-muted">Detection d'anomalies, moteur de risques par zone, Indice d'Ecosysteme Zonal (IEZ).</p>
+            <h3 class="font-display font-semibold text-sm mb-1.5 sm:mb-2">Analyse Intelligente</h3>
+            <p class="text-xs sm:text-sm text-ink-muted">Detection d'anomalies, moteur de risques par zone, Indice d'Ecosysteme Zonal (IEZ).</p>
         </div>
-        <div class="bg-surface-card rounded-xl p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
-            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
-                <i class="fas fa-robot text-purple-600"></i>
+        <div class="bg-surface-card rounded-xl p-4 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3 sm:mb-4">
+                <i class="fas fa-robot text-purple-600 text-sm sm:text-base"></i>
             </div>
-            <h3 class="font-display font-semibold mb-2">IA Contextuelle</h3>
-            <p class="text-sm text-ink-muted">Interpretation automatique des anomalies et recommandations via Groq AI.</p>
+            <h3 class="font-display font-semibold text-sm mb-1.5 sm:mb-2">IA Contextuelle</h3>
+            <p class="text-xs sm:text-sm text-ink-muted">Interpretation automatique des anomalies et recommandations via Groq AI.</p>
         </div>
     </div>
 </section>
 
 <!-- DATA SOURCES -->
-<section class="mb-12">
-    <div class="flex items-center gap-3 mb-6">
-        <span class="section-num text-xs text-ink-muted">02</span>
-        <h2 class="text-lg font-display font-semibold">Sources de donnees</h2>
+<section class="mb-8 sm:mb-12">
+    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <span class="section-num text-[10px] sm:text-xs text-ink-muted">02</span>
+        <h2 class="text-sm sm:text-lg font-display font-semibold">Sources de donnees</h2>
         <div class="flex-1 h-px bg-surface-border"></div>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center">
-            <div class="text-2xl mb-2">🔥</div>
-            <div class="font-semibold text-sm">NASA FIRMS</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div class="p-3 sm:p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🔥</div>
+            <div class="font-semibold text-xs sm:text-sm">NASA FIRMS</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active
             </div>
         </div>
-        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-satellite text-center">
-            <div class="text-2xl mb-2">🛰</div>
-            <div class="font-semibold text-sm">Sentinel-2 / Landsat</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-satellite text-center">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🛰</div>
+            <div class="font-semibold text-xs sm:text-sm">Sentinel-2 / Landsat</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (NDVI)
             </div>
         </div>
-        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center">
-            <div class="text-2xl mb-2">🌡</div>
-            <div class="font-semibold text-sm">NASA POWER</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌡</div>
+            <div class="font-semibold text-xs sm:text-sm">NASA POWER</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (Climat)
             </div>
         </div>
-        <div class="p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center">
-            <div class="text-2xl mb-2">🌫</div>
-            <div class="font-semibold text-sm">Sentinel-5P / OpenAQ</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-card rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌫</div>
+            <div class="font-semibold text-xs sm:text-sm">Sentinel-5P / OpenAQ</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active (Air)
             </div>
         </div>
@@ -104,28 +104,28 @@
 
 <!-- PLATFORM STATUS -->
 <section>
-    <div class="flex items-center gap-3 mb-6">
-        <span class="section-num text-xs text-ink-muted">03</span>
-        <h2 class="text-lg font-display font-semibold">Etat de la plateforme</h2>
+    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <span class="section-num text-[10px] sm:text-xs text-ink-muted">03</span>
+        <h2 class="text-sm sm:text-lg font-display font-semibold">Etat de la plateforme</h2>
         <div class="flex-1 h-px bg-surface-border"></div>
     </div>
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-6">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
             <div>
-                <div class="text-2xl font-display font-bold text-territory-700">12</div>
-                <div class="text-xs text-ink-muted">Zones surveillees</div>
+                <div class="text-xl sm:text-2xl font-display font-bold text-territory-700">12</div>
+                <div class="text-[10px] sm:text-xs text-ink-muted">Zones surveillees</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-data-600">7</div>
-                <div class="text-xs text-ink-muted">Sources de donnees</div>
+                <div class="text-xl sm:text-2xl font-display font-bold text-data-600">7</div>
+                <div class="text-[10px] sm:text-xs text-ink-muted">Sources de donnees</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-satellite">3</div>
-                <div class="text-xs text-ink-muted">Satellites relies</div>
+                <div class="text-xl sm:text-2xl font-display font-bold text-satellite">3</div>
+                <div class="text-[10px] sm:text-xs text-ink-muted">Satellites relies</div>
             </div>
             <div>
-                <div class="text-2xl font-display font-bold text-risk-normal">En temps reel</div>
-                <div class="text-xs text-ink-muted">Mode production</div>
+                <div class="text-lg sm:text-2xl font-display font-bold text-risk-normal leading-tight">En temps reel</div>
+                <div class="text-[10px] sm:text-xs text-ink-muted">Mode production</div>
             </div>
         </div>
     </div>

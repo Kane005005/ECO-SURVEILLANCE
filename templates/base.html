@@ -2,7 +2,10 @@
 <html lang="fr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#15803D">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <title>{% block title %}ECO-SURVEILLANCE MALI{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,8 +54,8 @@
         }
     </script>
     <style>
-        * { -webkit-font-smoothing: antialiased; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0F172A; }
+        * { -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0F172A; overflow-x: hidden; }
         .text-eco-gradient { background: linear-gradient(135deg, #15803D 0%, #2563EB 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .section-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -69,19 +72,38 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         .pulse-dot { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .map-container { position: relative; }
-        .map-overlay { position: absolute; z-index: 1000; }
+
+        /* ── Mobile Sidebar ── */
+        #sidebar-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        #sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+        @media (min-width: 1024px) {
+            #sidebar-overlay { display: none !important; }
+            #sidebar { transform: translateX(0) !important; }
+            #main-wrapper { margin-left: 16rem !important; }
+        }
+        @media (max-width: 1023px) {
+            #sidebar { transform: translateX(-100%); z-index: 50; }
+            #sidebar.open { transform: translateX(0); }
+            #main-wrapper { margin-left: 0 !important; }
+            #topbar { left: 0 !important; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-surface-bg text-ink min-h-screen flex">
+<body class="bg-surface-bg text-ink min-h-screen">
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed left-0 top-0 bottom-0 w-64 bg-surface-card border-r border-surface-border z-50 flex flex-col transition-transform duration-200">
+    <aside id="sidebar" class="fixed left-0 top-0 bottom-0 w-64 bg-surface-card border-r border-surface-border flex flex-col transition-transform duration-200">
         <!-- Logo -->
-        <div class="p-4 border-b border-surface-border">
+        <div class="p-4 border-b border-surface-border flex items-center justify-between">
             <a href="{% url 'core:home' %}" class="flex items-center gap-3">
-                <div class="relative w-10 h-10 flex items-center justify-center bg-territory-50 rounded-xl">
+                <div class="relative w-10 h-10 flex items-center justify-center bg-territory-50 rounded-xl flex-shrink-0">
                     <svg viewBox="0 0 40 40" class="w-8 h-8">
                         <circle cx="20" cy="20" r="18" fill="none" stroke="#15803D" stroke-width="2" stroke-dasharray="4 4"/>
                         <circle cx="20" cy="20" r="10" fill="#2563EB" opacity="0.1"/>
@@ -94,6 +116,9 @@
                     <span class="text-[10px] font-medium text-ink-muted tracking-widest">MALI MVP</span>
                 </div>
             </a>
+            <button onclick="closeSidebar()" class="lg:hidden p-2 text-ink-muted hover:text-ink">
+                <i class="fas fa-times text-lg"></i>
+            </button>
         </div>
 
         <!-- Navigation -->
@@ -157,28 +182,28 @@
     </aside>
 
     <!-- MAIN CONTENT -->
-    <div class="flex-1 ml-64">
+    <div id="main-wrapper" class="lg:ml-64 min-h-screen">
         <!-- TOP BAR -->
-        <header class="fixed top-0 left-64 right-0 h-14 bg-surface-bg/80 backdrop-blur-xl border-b border-surface-border z-40 flex items-center justify-between px-6">
-            <div class="flex items-center gap-4">
-                <button id="mobileBtn" class="lg:hidden p-2 text-ink-soft">
+        <header id="topbar" class="fixed top-0 lg:left-64 left-0 right-0 h-14 bg-surface-bg/90 backdrop-blur-xl border-b border-surface-border z-40 flex items-center justify-between px-4 lg:px-6">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-1 text-ink-soft hover:text-ink rounded-lg hover:bg-surface-soft transition-colors">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <div id="page-title" class="font-display font-semibold text-sm"></div>
+                <div id="page-title" class="font-display font-semibold text-sm truncate"></div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 text-xs text-ink-muted">
+            <div class="flex items-center gap-2 lg:gap-4">
+                <div class="hidden sm:flex items-center gap-2 text-xs text-ink-muted">
                     <span class="w-2 h-2 rounded-full bg-risk-normal pulse-dot"></span>
                     <span id="connection-status">En ligne</span>
                 </div>
-                <div class="text-xs text-ink-muted" id="current-time"></div>
+                <div class="hidden md:block text-xs text-ink-muted" id="current-time"></div>
                 <!-- Notifications bell -->
                 <div class="relative">
                     <button onclick="toggleNotifications()" class="p-2 text-ink-muted hover:text-ink transition-colors relative">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notif-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-risk-critical text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
                     </button>
-                    <div id="notif-dropdown" class="hidden absolute right-0 top-10 w-80 bg-surface-card rounded-xl border border-surface-border shadow-card-hover z-50 overflow-hidden">
+                    <div id="notif-dropdown" class="hidden absolute right-0 top-10 w-72 sm:w-80 bg-surface-card rounded-xl border border-surface-border shadow-card-hover z-50 overflow-hidden">
                         <div class="p-3 border-b border-surface-border flex items-center justify-between">
                             <span class="text-sm font-semibold">Notifications</span>
                             <button onclick="clearNotifications()" class="text-xs text-ink-muted hover:text-ink">Tout marquer lu</button>
@@ -193,20 +218,35 @@
 
         <!-- PAGE CONTENT -->
         <main class="pt-14 min-h-screen">
-            <div class="p-6">
+            <div class="p-4 lg:p-6">
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
 
     <!-- TOAST CONTAINER -->
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 flex flex-col gap-2"></div>
 
     <script>
+    // ── Sidebar Mobile ──
+    function toggleSidebar(){
+        const sb=document.getElementById('sidebar');
+        const ov=document.getElementById('sidebar-overlay');
+        sb.classList.toggle('open');
+        ov.classList.toggle('active');
+        document.body.style.overflow=sb.classList.contains('open')?'hidden':'';
+    }
+    function closeSidebar(){
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+        document.body.style.overflow='';
+    }
+
     // ── Clock ──
     function updateClock(){
         const now=new Date();
-        document.getElementById('current-time').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        const el=document.getElementById('current-time');
+        if(el) el.textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     }
     setInterval(updateClock,1000);
     updateClock();
@@ -222,7 +262,7 @@
         document.getElementById('notif-badge').classList.add('hidden');
     }
     function addNotification(title,body,type='info'){
-        notifications.unshift({title,body,type,time:new Date()});
+        notifications.unshift({body,type,time:new Date()});
         const badge=document.getElementById('notif-badge');
         badge.textContent=notifications.length;
         badge.classList.remove('hidden');

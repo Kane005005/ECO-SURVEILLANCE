@@ -2,225 +2,225 @@
 {% block title %}Dashboard — ECO-SURVEILLANCE MALI{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
     <div>
-        <h1 class="text-2xl font-display font-bold">Dashboard National</h1>
-        <p class="text-sm text-ink-muted mt-1">Vue d'ensemble de la surveillance environnementale du Mali</p>
+        <h1 class="text-xl sm:text-2xl font-display font-bold">Dashboard National</h1>
+        <p class="text-xs sm:text-sm text-ink-muted mt-1">Vue d'ensemble de la surveillance environnementale du Mali</p>
     </div>
-    <div class="flex items-center gap-3">
-        <span class="text-xs text-ink-muted" id="last-update">—</span>
-        <button onclick="refreshDashboard()" class="px-3 py-1.5 text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors">
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <span class="text-[10px] sm:text-xs text-ink-muted" id="last-update">—</span>
+        <button onclick="refreshDashboard()" class="px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors">
             <i class="fas fa-refresh mr-1"></i> Actualiser
         </button>
     </div>
 </div>
 
 <!-- KPI CARDS -->
-<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4 cursor-pointer" onclick="window.location='{% url 'geography:zone_list' %}'">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-territory-50 flex items-center justify-center">
-                <i class="fas fa-leaf text-territory-600"></i>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'geography:zone_list' %}'">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-territory-50 flex items-center justify-center">
+                <i class="fas fa-leaf text-territory-600 text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">IEZ</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">IEZ</span>
         </div>
-        <div class="text-3xl font-display font-bold text-territory-700" id="kpi-iez">—</div>
-        <div class="text-xs text-ink-muted mt-1">IEZ National</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-territory-700" id="kpi-iez">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">IEZ National</div>
         <div class="mt-2 h-1.5 bg-surface-soft rounded-full overflow-hidden">
             <div class="h-full bg-territory-500 rounded-full transition-all duration-500" id="iez-bar" style="width:0%"></div>
         </div>
     </div>
 
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4 cursor-pointer" onclick="window.location='{% url 'fires:fire_list' %}'">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-risk-critical/10 flex items-center justify-center">
-                <i class="fas fa-fire text-risk-critical"></i>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'fires:fire_list' %}'">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-critical/10 flex items-center justify-center">
+                <i class="fas fa-fire text-risk-critical text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">7 jours</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">7j</span>
         </div>
-        <div class="text-3xl font-display font-bold text-risk-critical" id="kpi-fires">—</div>
-        <div class="text-xs text-ink-muted mt-1">Feux actifs</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-critical" id="kpi-fires">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Feux actifs</div>
         <div class="mt-2 flex items-center gap-1">
-            <i class="fas fa-arrow-up text-[10px] text-risk-critical" id="fires-trend"></i>
-            <span class="text-[10px] text-ink-muted" id="fires-trend-text">—</span>
+            <i class="fas fa-arrow-up text-[9px] sm:text-[10px] text-risk-critical" id="fires-trend"></i>
+            <span class="text-[9px] sm:text-[10px] text-ink-muted" id="fires-trend-text">—</span>
         </div>
     </div>
 
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4 cursor-pointer" onclick="window.location='{% url 'incidents:incident_list' %}'">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-risk-high/10 flex items-center justify-center">
-                <i class="fas fa-triangle-exclamation text-risk-high"></i>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'incidents:incident_list' %}'">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-high/10 flex items-center justify-center">
+                <i class="fas fa-triangle-exclamation text-risk-high text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">Total</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Total</span>
         </div>
-        <div class="text-3xl font-display font-bold text-risk-high" id="kpi-incidents">—</div>
-        <div class="text-xs text-ink-muted mt-1">Incidents</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-high" id="kpi-incidents">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Incidents</div>
         <div class="mt-2 flex gap-1">
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-risk-critical/10 text-risk-critical" id="inc-critical">0</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-risk-high/10 text-risk-high" id="inc-high">0</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-risk-vigil/10 text-risk-vigil" id="inc-medium">0</span>
+            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-critical/10 text-risk-critical" id="inc-critical">0</span>
+            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-high/10 text-risk-high" id="inc-high">0</span>
+            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-vigil/10 text-risk-vigil" id="inc-medium">0</span>
         </div>
     </div>
 
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4 cursor-pointer" onclick="window.location='{% url 'anomalies:anomaly_list' %}'">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-satellite/10 flex items-center justify-center">
-                <i class="fas fa-magnifying-glass text-satellite"></i>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'anomalies:anomaly_list' %}'">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-satellite/10 flex items-center justify-center">
+                <i class="fas fa-magnifying-glass text-satellite text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">30 jours</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">30j</span>
         </div>
-        <div class="text-3xl font-display font-bold text-satellite" id="kpi-anomalies">—</div>
-        <div class="text-xs text-ink-muted mt-1">Anomalies</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-satellite" id="kpi-anomalies">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Anomalies</div>
     </div>
 
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4 cursor-pointer" onclick="window.location='{% url 'sensors:station_list' %}'">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-data-50 flex items-center justify-center">
-                <i class="fas fa-tower-broadcast text-data-600"></i>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'sensors:station_list' %}'">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-data-50 flex items-center justify-center">
+                <i class="fas fa-tower-broadcast text-data-600 text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">Actives</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Actives</span>
         </div>
-        <div class="text-3xl font-display font-bold text-data-600" id="kpi-stations">—</div>
-        <div class="text-xs text-ink-muted mt-1">Stations</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-data-600" id="kpi-stations">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Stations</div>
         <div class="mt-2 flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-risk-normal" id="station-dot"></span>
-            <span class="text-[10px] text-ink-muted" id="station-status">—</span>
+            <span class="text-[9px] sm:text-[10px] text-ink-muted" id="station-status">—</span>
         </div>
     </div>
 
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-4">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-risk-vigil/10 flex items-center justify-center">
-                <i class="fas fa-bell text-risk-vigil"></i>
+    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-vigil/10 flex items-center justify-center">
+                <i class="fas fa-bell text-risk-vigil text-sm sm:text-base"></i>
             </div>
-            <span class="text-[10px] font-medium text-ink-faint">Non lues</span>
+            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Non lues</span>
         </div>
-        <div class="text-3xl font-display font-bold text-risk-vigil" id="kpi-alerts">—</div>
-        <div class="text-xs text-ink-muted mt-1">Alertes</div>
+        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-vigil" id="kpi-alerts">—</div>
+        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Alertes</div>
     </div>
 </div>
 
 <!-- MAIN CHARTS ROW -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
     <!-- IEZ Donut -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="w-1.5 h-6 rounded-full bg-territory-600"></div>
-            <h2 class="font-display font-semibold text-sm">IEZ National</h2>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+        <div class="flex items-center gap-2 mb-3 sm:mb-4">
+            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-territory-600"></div>
+            <h2 class="font-display font-semibold text-xs sm:text-sm">IEZ National</h2>
         </div>
         <div class="flex items-center justify-center">
-            <div class="relative w-44 h-44">
+            <div class="relative w-36 h-36 sm:w-44 sm:h-44">
                 <canvas id="chart-iez-donut"></canvas>
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-4xl font-display font-bold" id="iez-score">—</span>
-                    <span class="text-xs text-ink-muted mt-1" id="iez-label">Chargement...</span>
+                    <span class="text-3xl sm:text-4xl font-display font-bold" id="iez-score">—</span>
+                    <span class="text-[10px] sm:text-xs text-ink-muted mt-1" id="iez-label">Chargement...</span>
                 </div>
             </div>
         </div>
-        <div class="grid grid-cols-4 gap-2 mt-4">
+        <div class="grid grid-cols-4 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
             <div class="text-center">
-                <div class="text-lg font-bold text-risk-normal" id="iez-bon">0</div>
-                <div class="text-[10px] text-ink-muted">Bon</div>
+                <div class="text-base sm:text-lg font-bold text-risk-normal" id="iez-bon">0</div>
+                <div class="text-[9px] sm:text-[10px] text-ink-muted">Bon</div>
             </div>
             <div class="text-center">
-                <div class="text-lg font-bold text-risk-vigil" id="iez-vigil">0</div>
-                <div class="text-[10px] text-ink-muted">Vigilance</div>
+                <div class="text-base sm:text-lg font-bold text-risk-vigil" id="iez-vigil">0</div>
+                <div class="text-[9px] sm:text-[10px] text-ink-muted">Vigilance</div>
             </div>
             <div class="text-center">
-                <div class="text-lg font-bold text-risk-high" id="iez-degr">0</div>
-                <div class="text-[10px] text-ink-muted">Degrade</div>
+                <div class="text-base sm:text-lg font-bold text-risk-high" id="iez-degr">0</div>
+                <div class="text-[9px] sm:text-[10px] text-ink-muted">Degrade</div>
             </div>
             <div class="text-center">
-                <div class="text-lg font-bold text-risk-critical" id="iez-crit">0</div>
-                <div class="text-[10px] text-ink-muted">Critique</div>
+                <div class="text-base sm:text-lg font-bold text-risk-critical" id="iez-crit">0</div>
+                <div class="text-[9px] sm:text-[10px] text-ink-muted">Critique</div>
             </div>
         </div>
     </div>
 
     <!-- Incidents Chart -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="w-1.5 h-6 rounded-full bg-risk-high"></div>
-            <h2 class="font-display font-semibold text-sm">Incidents par type</h2>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+        <div class="flex items-center gap-2 mb-3 sm:mb-4">
+            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-high"></div>
+            <h2 class="font-display font-semibold text-xs sm:text-sm">Incidents par type</h2>
         </div>
-        <canvas id="chart-incidents" height="180"></canvas>
+        <canvas id="chart-incidents" height="160"></canvas>
     </div>
 
     <!-- Fires Timeline -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="w-1.5 h-6 rounded-full bg-risk-critical"></div>
-            <h2 class="font-display font-semibold text-sm">Feux (7 derniers jours)</h2>
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+        <div class="flex items-center gap-2 mb-3 sm:mb-4">
+            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-critical"></div>
+            <h2 class="font-display font-semibold text-xs sm:text-sm">Feux (7 derniers jours)</h2>
         </div>
-        <canvas id="chart-fires-timeline" height="180"></canvas>
+        <canvas id="chart-fires-timeline" height="160"></canvas>
     </div>
 </div>
 
 <!-- SECONDARY ROW -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
     <!-- Zone IEZ Bar Chart -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-        <div class="flex items-center justify-between mb-4">
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
-                <div class="w-1.5 h-6 rounded-full bg-territory-500"></div>
-                <h2 class="font-display font-semibold text-sm">IEZ par zone</h2>
+                <div class="w-1.5 h-5 sm:h-6 rounded-full bg-territory-500"></div>
+                <h2 class="font-display font-semibold text-xs sm:text-sm">IEZ par zone</h2>
             </div>
-            <a href="{% url 'geography:zone_list' %}" class="text-xs text-territory-600 hover:text-territory-700 font-medium">
+            <a href="{% url 'geography:zone_list' %}" class="text-[10px] sm:text-xs text-territory-600 hover:text-territory-700 font-medium">
                 <i class="fas fa-arrow-right"></i>
             </a>
         </div>
-        <canvas id="chart-zone-iez" height="200"></canvas>
+        <canvas id="chart-zone-iez" height="180"></canvas>
     </div>
 
     <!-- Recent Incidents List -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-        <div class="flex items-center justify-between mb-4">
+    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
-                <div class="w-1.5 h-6 rounded-full bg-risk-high"></div>
-                <h2 class="font-display font-semibold text-sm">Incidents recents</h2>
+                <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-high"></div>
+                <h2 class="font-display font-semibold text-xs sm:text-sm">Incidents recents</h2>
             </div>
-            <a href="{% url 'incidents:incident_list' %}" class="text-xs text-risk-high hover:text-risk-high/80 font-medium">
+            <a href="{% url 'incidents:incident_list' %}" class="text-[10px] sm:text-xs text-risk-high hover:text-risk-high/80 font-medium">
                 <i class="fas fa-arrow-right"></i>
             </a>
         </div>
-        <div id="recent-incidents" class="space-y-2 max-h-52 overflow-y-auto">
-            <p class="text-ink-muted text-sm">Chargement...</p>
+        <div id="recent-incidents" class="space-y-2 max-h-44 sm:max-h-52 overflow-y-auto">
+            <p class="text-ink-muted text-xs sm:text-sm">Chargement...</p>
         </div>
     </div>
 </div>
 
 <!-- DATA SOURCES -->
-<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5 mb-6">
-    <div class="flex items-center gap-2 mb-4">
-        <div class="w-1.5 h-6 rounded-full bg-data-500"></div>
-        <h2 class="font-display font-semibold text-sm">Sources de donnees</h2>
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5 mb-4 sm:mb-6">
+    <div class="flex items-center gap-2 mb-3 sm:mb-4">
+        <div class="w-1.5 h-5 sm:h-6 rounded-full bg-data-500"></div>
+        <h2 class="font-display font-semibold text-xs sm:text-sm">Sources de donnees</h2>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center kpi-card">
-            <div class="text-2xl mb-2">🔥</div>
-            <div class="font-semibold text-sm">NASA FIRMS</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center kpi-card">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🔥</div>
+            <div class="font-semibold text-xs sm:text-sm">NASA FIRMS</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active
             </div>
         </div>
-        <div class="p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-satellite text-center kpi-card">
-            <div class="text-2xl mb-2">🛰</div>
-            <div class="font-semibold text-sm">Sentinel-2 / Landsat</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-satellite text-center kpi-card">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🛰</div>
+            <div class="font-semibold text-xs sm:text-sm">Sentinel-2 / Landsat</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> NDVI
             </div>
         </div>
-        <div class="p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center kpi-card">
-            <div class="text-2xl mb-2">🌡</div>
-            <div class="font-semibold text-sm">NASA POWER</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center kpi-card">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌡</div>
+            <div class="font-semibold text-xs sm:text-sm">NASA POWER</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Climat
             </div>
         </div>
-        <div class="p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center kpi-card">
-            <div class="text-2xl mb-2">🌫</div>
-            <div class="font-semibold text-sm">Sentinel-5P / OpenAQ</div>
-            <div class="text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
+        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center kpi-card">
+            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌫</div>
+            <div class="font-semibold text-xs sm:text-sm">Sentinel-5P / OpenAQ</div>
+            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Qualite air
             </div>
         </div>
@@ -228,17 +228,17 @@
 </div>
 
 <!-- MINI MAP -->
-<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5">
-    <div class="flex items-center justify-between mb-4">
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
+    <div class="flex items-center justify-between mb-3 sm:mb-4">
         <div class="flex items-center gap-2">
-            <div class="w-1.5 h-6 rounded-full bg-data-600"></div>
-            <h2 class="font-display font-semibold text-sm">Vue rapide de la carte</h2>
+            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-data-600"></div>
+            <h2 class="font-display font-semibold text-xs sm:text-sm">Vue rapide de la carte</h2>
         </div>
-        <a href="{% url 'core:map' %}" class="text-xs text-data-600 hover:text-data-700 font-medium">
-            Ouvrir la carte <i class="fas fa-arrow-right ml-1"></i>
+        <a href="{% url 'core:map' %}" class="text-[10px] sm:text-xs text-data-600 hover:text-data-700 font-medium">
+            Ouvrir <i class="fas fa-arrow-right ml-1"></i>
         </a>
     </div>
-    <div id="mini-map" class="rounded-xl border border-surface-border" style="height:250px;"></div>
+    <div id="mini-map" class="rounded-xl border border-surface-border" style="height:200px;"></div>
 </div>
 {% endblock %}
 
@@ -261,7 +261,6 @@ function loadDashboard(){
         dashboardData={dash,zones,incidents,map};
         document.getElementById('last-update').textContent='Mis a jour: '+new Date().toLocaleTimeString('fr-FR');
         
-        // KPIs
         document.getElementById('kpi-iez').textContent=dash.national_iez?dash.national_iez.toFixed(1):'--';
         document.getElementById('kpi-fires').textContent=dash.active_fires||0;
         document.getElementById('kpi-incidents').textContent=dash.active_incidents||0;
@@ -269,7 +268,6 @@ function loadDashboard(){
         document.getElementById('kpi-stations').textContent=dash.active_stations||0;
         document.getElementById('kpi-anomalies').textContent=dash.recent_anomalies||0;
         
-        // IEZ bar
         if(dash.national_iez){
             document.getElementById('iez-bar').style.width=dash.national_iez+'%';
             document.getElementById('iez-score').textContent=dash.national_iez.toFixed(0);
@@ -281,7 +279,6 @@ function loadDashboard(){
             document.getElementById('iez-label').className='text-xs '+c+' font-medium';
         }
         
-        // Incident severity counts
         const incList=incidents.incidents||[];
         const sevCounts={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0};
         incList.forEach(i=>sevCounts[i.severity]=(sevCounts[i.severity]||0)+1);
@@ -289,31 +286,22 @@ function loadDashboard(){
         document.getElementById('inc-high').textContent=sevCounts.HIGH;
         document.getElementById('inc-medium').textContent=sevCounts.MEDIUM;
         
-        // Recent incidents
         const incEl=document.getElementById('recent-incidents');
         if(incList.length){
             incEl.innerHTML=incList.slice(0,8).map(i=>{
                 const styles={CRITICAL:'border-risk-critical bg-risk-critical/5',HIGH:'border-risk-high bg-risk-high/5',MEDIUM:'border-risk-vigil bg-risk-vigil/5',LOW:'border-risk-normal bg-risk-normal/5'};
                 const icons={CRITICAL:'fa-exclamation-circle text-risk-critical',HIGH:'fa-exclamation-triangle text-risk-high',MEDIUM:'fa-exclamation text-risk-vigil',LOW:'fa-info-circle text-risk-normal'};
-                return '<a href="/incidents/'+i.id+'/" class="block p-3 border-l-4 '+(styles[i.severity]||'border-surface-border')+' rounded-r hover:bg-surface-soft transition-colors"><div class="flex items-center gap-2"><i class="fas '+(icons[i.severity]||'fa-info-circle')+' text-xs"></i><span class="text-sm font-medium truncate">'+i.title+'</span></div><div class="text-[10px] text-ink-muted mt-0.5 ml-5">'+i.severity+' &middot; '+i.incident_type+'</div></a>';
+                return '<a href="/incidents/'+i.id+'/" class="block p-2.5 sm:p-3 border-l-4 '+(styles[i.severity]||'border-surface-border')+' rounded-r hover:bg-surface-soft transition-colors"><div class="flex items-center gap-2"><i class="fas '+(icons[i.severity]||'fa-info-circle')+' text-xs"></i><span class="text-xs sm:text-sm font-medium truncate">'+i.title+'</span></div><div class="text-[9px] sm:text-[10px] text-ink-muted mt-0.5 ml-5">'+i.severity+' &middot; '+i.incident_type+'</div></a>';
             }).join('');
         }else{
-            incEl.innerHTML='<p class="text-ink-muted text-sm text-center py-4">Aucun incident</p>';
+            incEl.innerHTML='<p class="text-ink-muted text-xs sm:text-sm text-center py-4">Aucun incident</p>';
         }
         
-        // IEZ Donut
         renderIEZDonut(zones.zones||[]);
-        
-        // Zone bar chart
         renderZoneBarChart(zones.zones||[]);
-        
-        // Incidents chart
         renderIncidentsChart(incList);
-        
-        // Mini map
         renderMiniMap(map);
         
-        // Sidebar counts
         if(dash.active_fires>0){
             document.getElementById('nav-fire-count').textContent=dash.active_fires;
             document.getElementById('nav-fire-count').classList.remove('hidden');
@@ -327,7 +315,6 @@ function loadDashboard(){
     });
 }
 
-// ── Charts ──
 let charts={};
 
 function renderIEZDonut(zones){
@@ -364,15 +351,15 @@ function renderZoneBarChart(zones){
     if(charts.zoneBar)charts.zoneBar.destroy();
     charts.zoneBar=new Chart(document.getElementById('chart-zone-iez'),{
         type:'bar',
-        data:{labels,datasets:[{label:'IEZ',data:scores,backgroundColor:colors,borderRadius:6,barThickness:20}]},
-        options:{indexAxis:'y',scales:{x:{beginAtZero:true,max:100,grid:{color:'#E2E8F0'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}},plugins:{legend:{display:false}},responsive:true}
+        data:{labels,datasets:[{label:'IEZ',data:scores,backgroundColor:colors,borderRadius:6,barThickness:16}]},
+        options:{indexAxis:'y',scales:{x:{beginAtZero:true,max:100,grid:{color:'#E2E8F0'},ticks:{font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}},plugins:{legend:{display:false}},responsive:true}
     });
 }
 
 function renderIncidentsChart(incidents){
     const types={};
     incidents.forEach(i=>{const t=i.incident_type||'GENERAL';types[t]=(types[t]||0)+1;});
-    const labels=Object.keys(types).map(t=>t.replace(/_/g,' ').substring(0,18));
+    const labels=Object.keys(types).map(t=>t.replace(/_/g,' ').substring(0,15));
     const data=Object.values(types);
     const palette=['#DC2626','#F97316','#2563EB','#15803D','#8B5CF6','#EAB308','#06B6D4'];
     
@@ -384,11 +371,10 @@ function renderIncidentsChart(incidents){
     charts.incidents=new Chart(document.getElementById('chart-incidents'),{
         type:'doughnut',
         data:{labels,datasets:[{data,backgroundColor:palette.slice(0,data.length),borderWidth:0,spacing:2}]},
-        options:{cutout:'55%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:10,font:{size:10}}}},responsive:true}
+        options:{cutout:'55%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:8,font:{size:9}}}},responsive:true}
     });
 }
 
-// ── Mini Map ──
 function renderMiniMap(data){
     const map=L.map('mini-map',{zoomControl:false,attributionControl:false}).setView([17.5,-3.0],6);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}).addTo(map);
@@ -397,16 +383,15 @@ function renderMiniMap(data){
     (data.zones||[]).forEach(z=>{
         if(!z.latitude||!z.longitude)return;
         const c=zoneColors[z.status]||'#22C55E';
-        L.circleMarker([z.latitude,z.longitude],{radius:10,color:c,fillColor:c,fillOpacity:0.3,weight:2}).addTo(map);
+        L.circleMarker([z.latitude,z.longitude],{radius:8,color:c,fillColor:c,fillOpacity:0.3,weight:2}).addTo(map);
     });
     
     (data.fires||[]).forEach(f=>{
-        L.circleMarker([f.latitude,f.longitude],{radius:5,color:'#DC2626',fillColor:'#DC2626',fillOpacity:0.7,weight:1}).addTo(map);
+        L.circleMarker([f.latitude,f.longitude],{radius:4,color:'#DC2626',fillColor:'#DC2626',fillOpacity:0.7,weight:1}).addTo(map);
     });
 }
 
-// ── Init ──
 loadDashboard();
-setInterval(loadDashboard,300000); // Refresh every 5 min
+setInterval(loadDashboard,300000);
 </script>
 {% endblock %}
