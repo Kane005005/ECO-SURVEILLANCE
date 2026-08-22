@@ -14,7 +14,11 @@ try:
     from dotenv import load_dotenv
     load_dotenv(os.path.join(project_home, '.env'))
 except ImportError:
-    pass
+    try:
+        from decouple import config as _dc
+        # python-decouple handles .env automatically
+    except ImportError:
+        pass
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
