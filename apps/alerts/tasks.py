@@ -16,9 +16,12 @@ def evaluate_all_alerts(self):
 
 
 @shared_task(bind=True, ignore_result=True)
-def sync_firms_and_evaluate_alerts(self):
-    """Sync FIRMS data then re-evaluate alerts."""
-    from apps.fires.tasks import sync_firms_data
-    sync_firms_data()
-    evaluate_all_alerts.delay()
-    return {"status": "ok"}
+def run_eco_engine(self):
+    """Run central multi-source ECO Engine cross-correlations."""
+    from core.services.eco_engine import ECOEngine
+
+    engine = ECOEngine()
+    alerts = engine.run_all_correlations()
+    logger.info("ECO Engine run complete: %d correlated alerts evaluated.", len(alerts))
+    return {"status": "ok", "correlated_alerts": len(alerts)}
+

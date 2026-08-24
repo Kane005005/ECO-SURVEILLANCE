@@ -10,6 +10,10 @@ from .sentinel2 import Sentinel2Provider
 from .sentinel5p import Sentinel5PProvider
 from .landsat import LandsatProvider
 from .openaq import OpenAQProvider
+from .glofas import GloFASProvider
+from .lance_flood import LANCEFloodProvider
+from .flood_hub import FloodHubProvider
+from .open_meteo import OpenMeteoProvider
 
 __all__ = [
     "BaseDataProvider",
@@ -22,4 +26,8 @@ __all__ = [
     "Sentinel5PProvider",
     "LandsatProvider",
     "OpenAQProvider",
+    "GloFASProvider",
+    "LANCEFloodProvider",
+    "FloodHubProvider",
+    "OpenMeteoProvider",
 ]

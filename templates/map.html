@@ -1,339 +1,392 @@
 {% extends "base.html" %}
-{% block title %}Carte interactive — ECO-SURVEILLANCE MALI{% endblock %}
+{% block title %}Carte Hydrographique & Climat — ECO-SURVEILLANCE MALI{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <style>
-    .layer-btn{transition:all .15s ease}
-    .layer-btn:hover{transform:scale(1.05)}
-    .layer-btn.active{box-shadow:0 0 0 2px rgba(255,255,255,0.8),0 0 0 4px currentColor}
-    .pulse-dot{animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-    .leaflet-container{background:#0F172A}
-    .cluster-small{background-color:rgba(34,197,94,0.3)}
-    .cluster-medium{background-color:rgba(234,179,8,0.3)}
-    .cluster-large{background-color:rgba(220,38,38,0.3)}
+    /* Clean Light Map Interface */
+    .leaflet-container { background: #F8FAFC !important; font-family: 'Inter', sans-serif; }
+    
+    /* Popups Blancs Purs (PC / Desktop uniquement) */
+    .leaflet-popup-content-wrapper {
+        background: #FFFFFF !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+        border: 1px solid #E2E8F0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    .leaflet-popup-content { margin: 0 !important; line-height: 1.4 !important; }
+    .leaflet-popup-tip { background: #FFFFFF !important; box-shadow: 0 3px 6px rgba(0,0,0,0.06) !important; }
 
-    .map-popup{font-family:'Inter',sans-serif;min-width:200px;max-width:280px}
-    .map-popup .popup-title{font-weight:700;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:5px}
-    .map-popup .popup-section{margin-top:6px;padding-top:5px;border-top:1px solid #E2E8F0}
-    .map-popup .popup-section-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:3px}
-    .map-popup .popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 6px}
-    .map-popup .popup-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#334155;padding:1px 0}
-    .map-popup .popup-row span:first-child{color:#64748b}
-    .map-popup .popup-row span:last-child{font-weight:600}
-    .map-popup .popup-badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:9px;font-weight:600}
-    .map-popup .popup-bar{height:3px;border-radius:2px;background:#E2E8F0;overflow:hidden;margin-top:2px}
-    .map-popup .popup-bar-fill{height:100%;border-radius:2px;transition:width .3s}
-    .map-popup .popup-sparkline{display:flex;align-items:flex-end;gap:1px;height:16px;margin-top:3px}
-    .map-popup .popup-sparkline div{flex:1;border-radius:1px 1px 0 0;min-width:2px}
-    .map-popup .popup-link{display:inline-flex;align-items:center;gap:3px;color:#2563EB;font-size:10px;font-weight:600;margin-top:4px;text-decoration:none}
-    .map-popup .popup-link:hover{text-decoration:underline}
-    .map-popup .popup-source{font-size:8px;color:#94A3B8;margin-top:3px;display:flex;align-items:center;gap:2px}
+    /* Close Button Styling — Clickable on PC & Top Right */
+    .leaflet-popup-close-button {
+        top: 8px !important;
+        right: 8px !important;
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        line-height: 20px !important;
+        text-align: center !important;
+        color: #64748B !important;
+        background: #F1F5F9 !important;
+        border-radius: 50% !important;
+        border: 1px solid #CBD5E1 !important;
+        z-index: 99999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+    }
+    .leaflet-popup-close-button:hover {
+        background: #E2E8F0 !important;
+        color: #0F172A !important;
+        transform: scale(1.1);
+    }
 
-    /* ── Mobile panels ── */
-    .map-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:998;opacity:0;pointer-events:none;transition:opacity .2s}
-    .map-panel-overlay.active{opacity:1;pointer-events:auto}
-    .map-panel-sheet{position:fixed;bottom:0;left:0;right:0;z-index:999;background:#fff;border-radius:16px 16px 0 0;max-height:70vh;transform:translateY(100%);transition:transform .25s ease;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)}
-    .map-panel-sheet.active{transform:translateY(0)}
-    .map-panel-handle{width:36px;height:4px;border-radius:2px;background:#CBD5E1;margin:8px auto 4px}
-    @media(min-width:1024px){
-        .map-panel-overlay{display:none!important}
-        .map-panel-sheet{position:absolute;transform:none!important;z-index:20;overflow-y:auto;border-radius:12px;border:1px solid #E2E8F0;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-        .map-panel-sheet.panel-left{top:0;left:0;bottom:0;width:280px;max-height:100%}
-        .map-panel-sheet.panel-right{top:0;right:0;bottom:0;width:280px;max-height:100%}
-        .map-panel-handle{display:none}
+    /* Hydro station marker */
+    .hydro-marker-container { display: flex; align-items: center; justify-content: center; }
+    .hydro-station-marker {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+    .hydro-station-marker:hover { transform: scale(1.15); }
+
+    /* Active Layer Pills */
+    .layer-pill {
+        transition: all 0.15s ease-in-out;
+    }
+    .active-layer-pill {
+        background-color: #0284C7 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35) !important;
+    }
+
+    /* Backdrop Overlay (Mobile & Modals) */
+    .map-panel-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        z-index: 998;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+    }
+    .map-panel-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Mobile Sheet (Bottom sliding with smooth spring) */
+    .map-panel-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background: #FFFFFF;
+        border-radius: 24px 24px 0 0;
+        max-height: 80vh;
+        transform: translateY(100%);
+        transition: transform .28s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow-y: auto;
+        padding-bottom: env(safe-area-inset-bottom);
+        border-top: 1px solid #E2E8F0;
+        box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.15);
+    }
+    .map-panel-sheet.active {
+        transform: translateY(0);
+    }
+    .map-panel-handle {
+        width: 44px;
+        height: 5px;
+        border-radius: 3px;
+        background: #CBD5E1;
+        margin: 10px auto 8px;
+        cursor: pointer;
+    }
+
+    /* DESKTOP / PC CLEAN FLOATING CARDS */
+    @media(min-width: 1024px) {
+        .map-panel-overlay { display: none !important; }
+        
+        .map-panel-sheet {
+            position: absolute;
+            bottom: auto;
+            transform: none !important;
+            z-index: 25;
+            overflow-y: auto;
+            border-radius: 16px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+        }
+        
+        /* Left Filter Panel on PC (Collapsible, width 280px) */
+        .map-panel-sheet.panel-left {
+            top: 14px;
+            left: 14px;
+            width: 280px;
+            max-height: calc(100% - 70px);
+            display: block;
+        }
+        .map-panel-sheet.panel-left.collapsed {
+            display: none !important;
+        }
+
+        /* Right Legend Panel on PC (Hidden by default, clean floating card on demand) */
+        .map-panel-sheet.panel-right {
+            top: 14px;
+            right: 14px;
+            width: 290px;
+            max-height: calc(100% - 70px);
+            display: none;
+        }
+        .map-panel-sheet.panel-right.active {
+            display: block !important;
+        }
+
+        .map-panel-handle { display: none; }
+        #mobile-bottom-sheet { display: none !important; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- HEADER -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
+<!-- HEADER WITH TITLE, BASE LAYER SELECTOR & LEGEND TOGGLE -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mb-3 sm:mb-4">
     <div>
-        <h1 class="text-lg sm:text-2xl font-display font-bold">Carte Environnementale</h1>
-        <p class="text-[10px] sm:text-sm text-ink-muted mt-0.5 sm:mt-1 truncate max-w-[280px] sm:max-w-none" id="map-status">Chargement...</p>
+        <div class="flex items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-display font-bold text-slate-900">Carte Hydrographique &amp; Territoriale</h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                <i class="fas fa-brain mr-1"></i> GPT-OSS 120B
+            </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5" id="map-status">Initialisation du réseau hydrologique du Mali...</p>
     </div>
-    <div class="flex items-center gap-2 flex-shrink-0">
-        <span class="text-[10px] sm:text-xs text-ink-muted" id="last-update">—</span>
-        <button onclick="toggleAutoRefresh()" id="btn-auto-refresh" class="px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft">
-            <i class="fas fa-sync-alt sm:mr-1"></i><span class="hidden sm:inline"> Auto-refresh</span>
+
+    <div class="flex items-center gap-2 flex-wrap">
+        <!-- BASE MAP SWITCHER -->
+        <div class="flex items-center bg-slate-100/90 p-1 rounded-lg border border-slate-200 shadow-sm text-xs">
+            <button onclick="switchBaseLayer('light')" data-layer="light" class="base-layer-btn px-2.5 py-1 rounded-md font-semibold text-xs bg-white text-blue-700 shadow-sm border border-slate-200">
+                <i class="fas fa-map mr-1"></i> Plan Clair
+            </button>
+            <button onclick="switchBaseLayer('topo')" data-layer="topo" class="base-layer-btn px-2.5 py-1 rounded-md font-medium text-xs text-slate-600 hover:text-slate-900">
+                <i class="fas fa-mountain mr-1"></i> Relief
+            </button>
+            <button onclick="switchBaseLayer('satellite')" data-layer="satellite" class="base-layer-btn px-2.5 py-1 rounded-md font-medium text-xs text-slate-600 hover:text-slate-900">
+                <i class="fas fa-satellite mr-1"></i> Satellite
+            </button>
+            <button onclick="switchBaseLayer('dark')" data-layer="dark" class="base-layer-btn px-2.5 py-1 rounded-md font-medium text-xs text-slate-600 hover:text-slate-900">
+                <i class="fas fa-moon mr-1"></i> Sombre
+            </button>
+        </div>
+
+        <!-- TOGGLE BUTTONS (PC & MOBILE) -->
+        <button onclick="toggleLegendPanel()" id="btn-toggle-legend" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors flex items-center gap-1.5" title="Afficher la légende">
+            <i class="fas fa-circle-info text-blue-600"></i> Légende
         </button>
-        <button onclick="refreshMap()" class="px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft">
-            <i class="fas fa-refresh"></i>
+
+        <button onclick="refreshMap()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Actualiser les flux">
+            <i class="fas fa-rotate-right mr-1"></i> Actualiser
         </button>
     </div>
 </div>
 
-<!-- MAP AREA -->
-<div class="relative rounded-xl border border-surface-border shadow-card overflow-hidden" style="height:calc(100dvh - 140px);min-height:300px">
+<!-- MAP CANVAS CONTAINER -->
+<div class="relative rounded-2xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden" style="height:calc(100dvh - 145px);min-height:400px">
 
-    <!-- MOBILE FABS -->
-    <button onclick="openPanel('filter')" class="lg:hidden absolute top-3 left-3 z-30 w-10 h-10 bg-surface-card rounded-full shadow-card border border-surface-border flex items-center justify-center text-territory-600 active:scale-95 transition-transform">
-        <i class="fas fa-sliders-h text-sm"></i>
+    <!-- MOBILE ACTION BUTTONS (FABS) -->
+    <button onclick="openPanel('filter')" class="lg:hidden absolute top-3 left-3 z-30 w-10 h-10 bg-white rounded-full shadow-md border border-slate-200 flex items-center justify-center text-blue-600 active:scale-95 transition-transform" title="Couches &amp; Filtres">
+        <i class="fas fa-sliders text-sm"></i>
     </button>
-    <button onclick="openPanel('stats')" class="lg:hidden absolute top-3 right-3 z-30 w-10 h-10 bg-surface-card rounded-full shadow-card border border-surface-border flex items-center justify-center text-data-600 active:scale-95 transition-transform">
-        <i class="fas fa-chart-bar text-sm"></i>
+    <button onclick="openPanel('stats')" class="lg:hidden absolute top-3 right-3 z-30 w-10 h-10 bg-white rounded-full shadow-md border border-slate-200 flex items-center justify-center text-slate-700 active:scale-95 transition-transform" title="Légende &amp; Statuts">
+        <i class="fas fa-circle-info text-sm text-blue-600"></i>
     </button>
 
-    <!-- MAP OVERLAY -->
-    <div id="panel-overlay" class="map-panel-overlay" onclick="closePanel()"></div>
+    <!-- BACKDROP BLUR OVERLAY (MOBILE ONLY) -->
+    <div id="panel-overlay" class="map-panel-overlay" onclick="closePanel();closeBottomSheet();"></div>
 
-    <!-- FILTER PANEL -->
+    <!-- LEFT FILTER & LAYERS PANEL -->
     <div id="filter-panel" class="map-panel-sheet panel-left p-4">
-        <div class="map-panel-handle lg:hidden"></div>
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-display font-semibold text-xs sm:text-sm flex items-center gap-2">
-                <i class="fas fa-sliders-h text-territory-600"></i> Filtres &amp; Couches
+        <div class="map-panel-handle lg:hidden" onclick="closePanel()"></div>
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+            <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fas fa-layer-group text-blue-600"></i> Couches de Données
             </h3>
-            <button onclick="closePanel()" class="lg:hidden text-ink-muted hover:text-ink p-1"><i class="fas fa-times text-sm"></i></button>
+            <button onclick="closePanel()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1 block">Rechercher zone</label>
+        <!-- SEARCH BOX -->
+        <div class="mb-3.5">
+            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Rechercher une station ou zone</label>
             <div class="relative">
-                <input type="text" id="search-zone" placeholder="Nom de zone..." class="w-full pl-7 pr-2.5 py-1.5 sm:py-2 text-[11px] sm:text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" oninput="filterZonesByName(this.value)">
-                <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-ink-faint text-[10px]"></i>
+                <input type="text" id="search-zone" placeholder="Ex: Koulikoro, Mopti, Gao..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" oninput="filterZonesByName(this.value)">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1.5 block">Couches principales</label>
-            <div class="grid grid-cols-2 gap-1">
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-zones" onchange="toggleLayer('zones')" class="w-3.5 h-3.5 rounded border-surface-border text-territory-600 focus:ring-territory-500">
-                    <span class="w-2.5 h-2.5 rounded-full bg-risk-normal flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Zones</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-fires" onchange="toggleLayer('fires')" class="w-3.5 h-3.5 rounded border-surface-border text-risk-critical focus:ring-risk-critical">
-                    <span class="w-2.5 h-2.5 rounded-full bg-risk-critical flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Feux</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-stations" onchange="toggleLayer('stations')" class="w-3.5 h-3.5 rounded border-surface-border text-data-600 focus:ring-data-600">
-                    <span class="w-2.5 h-2.5 rounded-full bg-data-600 flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Stations</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-incidents" onchange="toggleLayer('incidents')" class="w-3.5 h-3.5 rounded border-surface-border text-risk-high focus:ring-risk-high">
-                    <span class="w-2.5 h-2.5 rounded-full bg-risk-high flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Incidents</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-anomalies" onchange="toggleLayer('anomalies')" class="w-3.5 h-3.5 rounded border-surface-border text-satellite focus:ring-satellite">
-                    <span class="w-2.5 h-2.5 rounded-full bg-satellite flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Anomalies</span>
-                </label>
+        <!-- 1. COUCHES HYDRAULIQUES (ACTIVES PAR DÉFAUT) -->
+        <div class="mb-3 p-2.5 bg-blue-50/70 rounded-xl border border-blue-100">
+            <div class="text-xs font-bold text-blue-900 mb-2 flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><i class="fas fa-water text-blue-600"></i> Hydrologie &amp; Crues</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-200/60 text-blue-800 font-semibold">Prioritaire</span>
             </div>
-        </div>
-
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1.5 block">Couches satellite</label>
-            <div class="grid grid-cols-2 gap-1">
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-ndvi" onchange="toggleLayer('ndvi')" class="w-3.5 h-3.5 rounded border-surface-border text-territory-600 focus:ring-territory-500">
-                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:linear-gradient(135deg,#DC2626,#EAB308,#22C55E)"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">NDVI</span>
+            <div class="space-y-1.5">
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-3 h-1 bg-blue-600 rounded-full"></span>
+                        <span class="text-xs font-medium text-slate-800">Réseau Hydrographique</span>
+                    </span>
+                    <input type="checkbox" id="layer-maliHydro" checked onchange="toggleLayer('maliHydro')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
                 </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-no2" onchange="toggleLayer('no2')" class="w-3.5 h-3.5 rounded border-surface-border text-purple-500 focus:ring-purple-500">
-                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">NO2 / Air</span>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200"></span>
+                        <span class="text-xs font-semibold text-slate-900">Stations GloFAS (72h)</span>
+                    </span>
+                    <input type="checkbox" id="layer-hydrology" checked onchange="toggleLayer('hydrology')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
                 </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-risks" onchange="toggleLayer('risks')" class="w-3.5 h-3.5 rounded border-surface-border text-orange-500 focus:ring-orange-500">
-                    <span class="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Risques</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" id="layer-heatmap" onchange="toggleLayer('heatmap')" class="w-3.5 h-3.5 rounded border-surface-border text-orange-500 focus:ring-orange-500">
-                    <span class="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs text-ink-soft">Heatmap</span>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                        <span class="text-xs font-medium text-slate-700">Inondations NASA LANCE</span>
+                    </span>
+                    <input type="checkbox" id="layer-floods" onchange="toggleLayer('floods')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
                 </label>
             </div>
         </div>
 
+        <!-- 2. COUCHES SECONDAIRES À LA DEMANDE (DÉCOCHÉES PAR DÉFAUT) -->
         <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1 block">Severite</label>
-            <div class="flex flex-wrap gap-1" id="severity-filters">
-                <button onclick="toggleSeverity('CRITICAL')" class="severity-btn px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-lg border border-risk-critical/30 bg-risk-critical/10 text-risk-critical" data-sev="CRITICAL">Critique</button>
-                <button onclick="toggleSeverity('HIGH')" class="severity-btn px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-lg border border-risk-high/30 bg-risk-high/10 text-risk-high" data-sev="HIGH">Eleve</button>
-                <button onclick="toggleSeverity('MEDIUM')" class="severity-btn px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-lg border border-risk-vigil/30 bg-risk-vigil/10 text-risk-vigil" data-sev="MEDIUM">Moyen</button>
-                <button onclick="toggleSeverity('LOW')" class="severity-btn px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-lg border border-risk-normal/30 bg-risk-normal/10 text-risk-normal" data-sev="LOW">Faible</button>
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Couches Secondaires</div>
+            <div class="space-y-1">
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                        <span class="text-xs text-slate-700">Météo Open-Meteo &amp; POWER</span>
+                    </span>
+                    <input type="checkbox" id="layer-climate" onchange="toggleLayer('climate')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span class="text-xs text-slate-700">Feux Actifs (NASA FIRMS)</span>
+                    </span>
+                    <input type="checkbox" id="layer-fires" onchange="toggleLayer('fires')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                        <span class="text-xs text-slate-700">Alertes ECO Engine</span>
+                    </span>
+                    <input type="checkbox" id="layer-incidents" onchange="toggleLayer('incidents')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <span class="text-xs text-slate-700">Heatmap Thermique</span>
+                    </span>
+                    <input type="checkbox" id="layer-heatmap" onchange="toggleLayer('heatmap')" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                </label>
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1 block">Type incident</label>
-            <select id="filter-incident-type" class="w-full px-2.5 py-1.5 text-[11px] sm:text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
-                <option value="">Tous</option>
-                <option value="WILDFIRE">Incendie</option>
-                <option value="DROUGHT">Secheresse</option>
-                <option value="WATER_POLLUTION">Pollution eau</option>
-                <option value="VEGETATION_DEGRADATION">Vegetation</option>
-                <option value="ATMOSPHERIC_ANOMALY">Atmosphere</option>
-                <option value="HEAT">Canicule</option>
-                <option value="WATER_STRESS">Stress hydrique</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1 block">Confiance feux</label>
-            <select id="filter-fire-confidence" class="w-full px-2.5 py-1.5 text-[11px] sm:text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
-                <option value="">Toutes</option>
-                <option value="high">Haute</option>
-                <option value="nominal">Moyenne</option>
-                <option value="low">Basse</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="text-[10px] sm:text-xs font-medium text-ink-soft mb-1 block">Type zone</label>
-            <select id="filter-zone-type" class="w-full px-2.5 py-1.5 text-[11px] sm:text-xs border border-surface-border rounded-lg bg-surface-soft focus:outline-none focus:ring-2 focus:ring-territory-500" onchange="applyFilters()">
-                <option value="">Toutes</option>
-                <option value="URBAN">Urbaine</option>
-                <option value="FOREST">Foret</option>
-                <option value="WETLAND">Zone humide</option>
-                <option value="AGRICULTURAL">Agricole</option>
-                <option value="SAVANNAH">Savane</option>
-                <option value="DESERT">Desert</option>
-                <option value="RIVER">Riviere</option>
-                <option value="LAKE">Lac</option>
-            </select>
-        </div>
-
-        <button onclick="resetFilters()" class="w-full py-1.5 text-[10px] sm:text-xs font-medium rounded-lg bg-surface-soft text-ink-soft hover:bg-surface-border border border-surface-border">
-            <i class="fas fa-undo mr-1"></i> Reinitialiser
+        <button onclick="resetFilters()" class="w-full py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors">
+            <i class="fas fa-arrow-rotate-left mr-1"></i> Réinitialiser l'affichage
         </button>
     </div>
 
-    <!-- MAP -->
+    <!-- MAP VIEWPORT (SPACIOUS & UNOBSTRUCTED) -->
     <div id="map" class="absolute inset-0 z-10"></div>
 
-    <!-- STATS PANEL -->
+    <!-- RIGHT STATS & LEGEND PANEL (FLOATING CARD ON PC, CLEAN DRAWER ON MOBILE) -->
     <div id="stats-panel" class="map-panel-sheet panel-right p-4">
-        <div class="map-panel-handle lg:hidden"></div>
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-display font-semibold text-xs sm:text-sm flex items-center gap-2">
-                <i class="fas fa-chart-bar text-data-600"></i> Statistiques
+        <div class="map-panel-handle lg:hidden" onclick="closePanel()"></div>
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+            <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fas fa-circle-info text-blue-600"></i> Légende &amp; Références
             </h3>
-            <button onclick="closePanel()" class="lg:hidden text-ink-muted hover:text-ink p-1"><i class="fas fa-times text-sm"></i></button>
+            <button onclick="closePanel()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-territory-700" id="stat-zones">0</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">Zones</div>
-            </div>
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-critical" id="stat-fires">0</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">Feux</div>
-            </div>
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-high" id="stat-incidents">0</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">Incidents</div>
-            </div>
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-satellite" id="stat-anomalies">0</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">Anomalies</div>
-            </div>
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-territory-600" id="stat-ndvi">—</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">NDVI moy.</div>
-            </div>
-            <div class="bg-surface-soft rounded-lg p-1.5 sm:p-2 text-center">
-                <div class="text-base sm:text-lg font-bold text-purple-600" id="stat-no2">—</div>
-                <div class="text-[8px] sm:text-[9px] text-ink-muted">NO2</div>
+        <!-- VIGILANCE CRUE -->
+        <div class="mb-3.5">
+            <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Statut des Débits GloFAS</div>
+            <div class="space-y-1.5 text-xs">
+                <div class="flex items-center gap-2 p-1.5 rounded bg-emerald-50/70 border border-emerald-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                    <div><b class="text-emerald-900 block text-[11px]">Normal</b><span class="text-[9px] text-slate-500">Débit conforme aux seuils saisonniers</span></div>
+                </div>
+                <div class="flex items-center gap-2 p-1.5 rounded bg-yellow-50/70 border border-yellow-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 flex-shrink-0"></span>
+                    <div><b class="text-yellow-900 block text-[11px]">Vigilance Crue</b><span class="text-[9px] text-slate-500">Hausse continue modélisée à 72h</span></div>
+                </div>
+                <div class="flex items-center gap-2 p-1.5 rounded bg-orange-50/70 border border-orange-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
+                    <div><b class="text-orange-900 block text-[11px]">Alerte Crue</b><span class="text-[9px] text-slate-500">Risque de submersion des berges</span></div>
+                </div>
+                <div class="flex items-center gap-2 p-1.5 rounded bg-red-50/70 border border-red-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <div><b class="text-red-900 block text-[11px]">Danger Majeur</b><span class="text-[9px] text-slate-500">Débit au-delà du seuil critique</span></div>
+                </div>
             </div>
         </div>
 
-        <div id="hovered-zone-info" class="bg-surface-soft rounded-lg p-2.5 hidden mb-3">
-            <h4 class="text-[10px] sm:text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-territory-600"></span> Zone survolee
-            </h4>
-            <div id="hovered-zone-content" class="text-[10px] sm:text-xs text-ink"></div>
-        </div>
-
-        <div class="mb-3">
-            <h4 class="text-[10px] sm:text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-territory-600"></span> Zones (IEZ)
-            </h4>
-            <div class="space-y-0.5 text-[10px] sm:text-[11px]">
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-normal"></span> Bon (&ge; 85)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-vigil"></span> Vigilance (65-84)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-high"></span> Degrade (40-64)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-critical"></span> Critique (&lt; 40)</div>
+        <!-- IA & MODÈLES -->
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <div class="font-bold text-slate-800 mb-1 flex items-center gap-1.5 text-[11px]">
+                <i class="fas fa-brain text-purple-600"></i> Modélisation IA &amp; Météo
             </div>
-        </div>
-
-        <div class="mb-3">
-            <h4 class="text-[10px] sm:text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-territory-500"></span> NDVI Vegetation
-            </h4>
-            <div class="space-y-0.5 text-[10px] sm:text-[11px]">
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-critical"></span> Bare (&lt; 0.2)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-vigil"></span> Faible (0.2-0.4)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-territory-500"></span> Modere (0.4-0.6)</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-territory-700"></span> Dense (&gt; 0.6)</div>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <h4 class="text-[10px] sm:text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-risk-critical"></span> Feux FIRMS
-            </h4>
-            <div class="space-y-0.5 text-[10px] sm:text-[11px]">
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-critical"></span> Haute confiance</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-high"></span> Moyenne</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-vigil"></span> Basse</div>
-            </div>
-        </div>
-
-        <div>
-            <h4 class="text-[10px] sm:text-xs font-semibold text-ink-soft mb-1.5 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-purple-500"></span> Qualite air
-            </h4>
-            <div class="space-y-0.5 text-[10px] sm:text-[11px]">
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-normal"></span> Bon</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-vigil"></span> Modere</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-high"></span> Mauvais</div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-risk-critical"></span> Dangereux</div>
-            </div>
+            <p class="text-[10px] text-slate-500 leading-relaxed">
+                Données croisées en temps réel : <b>CEMS-GloFAS</b> (hydrologie), <b>Open-Meteo</b> (météo live) et <b>OpenAI GPT-OSS</b>.
+            </p>
         </div>
     </div>
 
-    <!-- LAYER TOGGLE BAR (scrollable on mobile) -->
-    <div class="absolute bottom-3 left-0 right-0 z-20 px-2 sm:px-4 flex justify-center pointer-events-none">
-        <div class="pointer-events-auto flex gap-0.5 sm:gap-1 bg-surface-card/95 backdrop-blur-sm rounded-xl border border-surface-border shadow-card p-1 sm:p-1.5 overflow-x-auto max-w-full" id="layer-bar">
-            <button onclick="toggleLayer('zones')" id="btn-zones" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-risk-normal whitespace-nowrap flex-shrink-0" title="Zones">
-                <i class="fas fa-circle-dot sm:mr-1"></i><span class="hidden sm:inline">Zones</span>
+    <!-- BOTTOM SHEET (MOBILE ONLY WITH BLURRED BACKDROP) -->
+    <div id="mobile-bottom-sheet" class="map-panel-sheet p-4">
+        <div class="map-panel-handle" onclick="closeBottomSheet()"></div>
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fiche Télémétrique &amp; Diagnostic</span>
+            <button onclick="closeBottomSheet()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-base"></i></button>
+        </div>
+        <div id="bottom-sheet-content"></div>
+    </div>
+
+    <!-- QUICK TOGGLE BAR (BOTTOM CENTER) -->
+    <div class="absolute bottom-3 left-0 right-0 z-20 px-3 flex justify-center pointer-events-none">
+        <div class="pointer-events-auto flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/80 shadow-md p-1.5 overflow-x-auto max-w-full">
+            <button onclick="toggleLayer('maliHydro')" id="btn-maliHydro" class="layer-pill active-layer-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-water text-blue-600"></i> Cours d'eau
             </button>
-            <button onclick="toggleLayer('fires')" id="btn-fires" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-risk-critical whitespace-nowrap flex-shrink-0" title="Feux">
-                <i class="fas fa-fire sm:mr-1"></i><span class="hidden sm:inline">Feux</span>
+            <button onclick="toggleLayer('hydrology')" id="btn-hydrology" class="layer-pill active-layer-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-gauge-high text-emerald-600"></i> Débits GloFAS
             </button>
-            <button onclick="toggleLayer('stations')" id="btn-stations" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-data-600 whitespace-nowrap flex-shrink-0" title="Stations">
-                <i class="fas fa-tower-broadcast sm:mr-1"></i><span class="hidden sm:inline">Stations</span>
+            <div class="w-px h-4 bg-slate-200 mx-0.5"></div>
+            <button onclick="toggleLayer('floods')" id="btn-floods" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-water-ladder text-sky-500"></i> Inondations
             </button>
-            <button onclick="toggleLayer('incidents')" id="btn-incidents" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-risk-high whitespace-nowrap flex-shrink-0" title="Incidents">
-                <i class="fas fa-triangle-exclamation sm:mr-1"></i><span class="hidden sm:inline">Incidents</span>
+            <button onclick="toggleLayer('climate')" id="btn-climate" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-cloud-sun text-sky-600"></i> Météo Live
             </button>
-            <button onclick="toggleLayer('anomalies')" id="btn-anomalies" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-satellite whitespace-nowrap flex-shrink-0" title="Anomalies">
-                <i class="fas fa-magnifying-glass sm:mr-1"></i><span class="hidden sm:inline">Anomalies</span>
+            <button onclick="toggleLayer('fires')" id="btn-fires" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-fire text-red-500"></i> Feux
             </button>
-            <div class="w-px bg-surface-border mx-0.5 flex-shrink-0"></div>
-            <button onclick="toggleLayer('ndvi')" id="btn-ndvi" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-territory-600 whitespace-nowrap flex-shrink-0" title="NDVI">
-                <i class="fas fa-leaf sm:mr-1"></i><span class="hidden sm:inline">NDVI</span>
-            </button>
-            <button onclick="toggleLayer('no2')" id="btn-no2" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-purple-500 whitespace-nowrap flex-shrink-0" title="Qualite air">
-                <i class="fas fa-cloud sm:mr-1"></i><span class="hidden sm:inline">Air</span>
-            </button>
-            <button onclick="toggleLayer('risks')" id="btn-risks" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-orange-500 whitespace-nowrap flex-shrink-0" title="Risques">
-                <i class="fas fa-shield-halved sm:mr-1"></i><span class="hidden sm:inline">Risques</span>
-            </button>
-            <button onclick="toggleLayer('heatmap')" id="btn-heatmap" class="layer-btn px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium rounded-lg text-orange-500 whitespace-nowrap flex-shrink-0" title="Heatmap feux">
-                <i class="fas fa-fire-flame-curved sm:mr-1"></i><span class="hidden sm:inline">Heatmap</span>
+            <button onclick="toggleLayer('incidents')" id="btn-incidents" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-triangle-exclamation text-orange-500"></i> Alertes
             </button>
         </div>
     </div>
@@ -343,416 +396,64 @@
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="/static/js/map.js"></script>
 <script>
-let map, allData={zones:[],fires:[],stations:[],incidents:[],anomalies:[],vegetation:[],atmosphere:[],risks:[]};
-let grps={zones:null,fires:null,stations:null,incidents:null,anomalies:null,ndvi:null,no2:null,risks:null,heatmap:null};
-let vis={zones:false,fires:false,stations:false,incidents:false,anomalies:false,ndvi:false,no2:false,risks:false,heatmap:false};
-let activeSeverities=new Set(['CRITICAL','HIGH','MEDIUM','LOW']);
-let autoRefreshInterval=null;
-
-map=L.map('map',{zoomControl:false}).setView([17.5,-3.0],6);
-L.control.zoom({position:'bottomright'}).addTo(map);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OSM &copy; CARTO',
-    maxZoom:18,subdomains:'abcd'
-}).addTo(map);
-
-// ── ICONS ──
-function fireIcon(conf){
-    const colors={high:'#DC2626',nominal:'#F97316',low:'#EAB308'};
-    const c=colors[conf]||'#F97316';
-    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 10px ${c}90"></div>`,iconSize:[14,14],className:''});
-}
-function stationIcon(status){
-    const c=status==='ACTIVE'?'#22C55E':status==='DEGRADED'?'#EAB308':'#94A3B8';
-    return L.divIcon({html:`<div style="width:12px;height:12px;background:${c};border-radius:50%;border:2px solid white;box-shadow:0 0 6px ${c}60"></div>`,iconSize:[12,12],className:''});
-}
-function incidentIcon(sev){
-    const colors={CRITICAL:'#DC2626',HIGH:'#F97316',MEDIUM:'#EAB308',LOW:'#22C55E'};
-    const c=colors[sev]||'#F97316';
-    return L.divIcon({html:`<div style="width:12px;height:12px;background:${c};border-radius:2px;border:2px solid white;transform:rotate(45deg);box-shadow:0 0 6px ${c}60"></div>`,iconSize:[12,12],className:''});
-}
-function anomalyIcon(type){
-    const colors={VEGETATION:'#8B5CF6',CLIMATE:'#3B82F6',ATMOSPHERE:'#A855F7',FIRE:'#F97316',WATER:'#06B6D4',MULTI_SIGNAL:'#EC4899'};
-    const c=colors[type]||'#8B5CF6';
-    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:2px solid white;opacity:0.85"></div>`,iconSize:[10,10],className:''});
-}
-function ndviIcon(val){
-    const c=val>=0.6?'#15803D':val>=0.4?'#22C55E':val>=0.2?'#EAB308':'#DC2626';
-    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:1.5px solid white;opacity:0.8"></div>`,iconSize:[10,10],className:''});
-}
-function no2Icon(val){
-    const c=val>40?'#DC2626':val>20?'#F97316':val>10?'#EAB308':'#22C55E';
-    return L.divIcon({html:`<div style="width:10px;height:10px;background:${c};border-radius:50%;border:1.5px solid white;opacity:0.8"></div>`,iconSize:[10,10],className:''});
-}
-function riskIcon(level){
-    const colors={RED:'#DC2626',ORANGE:'#F97316',YELLOW:'#EAB308',GREEN:'#22C55E'};
-    const c=colors[level]||'#EAB308';
-    return L.divIcon({html:`<div style="width:14px;height:14px;background:${c};border-radius:50%;border:2px solid white;opacity:0.85;box-shadow:0 0 8px ${c}60"></div>`,iconSize:[14,14],className:''});
-}
-function zoneColor(zone){
-    const iez=zone.current_iez||0;
-    return iez>=85?'#22C55E':iez>=65?'#EAB308':iez>=40?'#F97316':'#DC2626';
-}
-
-// ── POPUP HELPERS ──
-function sevBadge(sev){
-    const c={CRITICAL:'bg-risk-critical/15 text-risk-critical',HIGH:'bg-risk-high/15 text-risk-high',MEDIUM:'bg-risk-vigil/15 text-risk-vigil',LOW:'bg-risk-normal/15 text-risk-normal'};
-    return `<span class="popup-badge ${c[sev]||''}">${sev}</span>`;
-}
-function confBadge(conf){
-    const c={high:'bg-risk-critical/15 text-risk-critical',nominal:'bg-risk-high/15 text-risk-high',low:'bg-risk-vigil/15 text-risk-vigil'};
-    return `<span class="popup-badge ${c[conf]||''}">${conf}</span>`;
-}
-function levelBadge(level){
-    const c={RED:'bg-risk-critical/15 text-risk-critical',ORANGE:'bg-risk-high/15 text-risk-high',YELLOW:'bg-risk-vigil/15 text-risk-vigil',GREEN:'bg-risk-normal/15 text-risk-normal'};
-    return `<span class="popup-badge ${c[level]||''}">${level}</span>`;
-}
-function statusBadge(st){
-    const c={MONITORING:'bg-data-600/15 text-data-600',ALERT:'bg-risk-high/15 text-risk-high',CRITICAL:'bg-risk-critical/15 text-risk-critical',NORMAL:'bg-risk-normal/15 text-risk-normal',ACTIVE:'bg-risk-normal/15 text-risk-normal',DEGRADED:'bg-risk-vigil/15 text-risk-vigil',OFFLINE:'bg-ink-faint/15 text-ink-faint',NEW:'bg-satellite/15 text-satellite',INVESTIGATING:'bg-data-600/15 text-data-600',CONFIRMED:'bg-risk-high/15 text-risk-high',RESOLVED:'bg-risk-normal/15 text-risk-normal',DISMISSED:'bg-ink-faint/15 text-ink-faint'};
-    return `<span class="popup-badge ${c[st]||'bg-surface-soft text-ink-muted'}">${st}</span>`;
-}
-function iezColor(val){return val>=85?'#22C55E':val>=65?'#EAB308':val>=40?'#F97316':'#DC2626';}
-function ndviColor(val){return val>=0.6?'#15803D':val>=0.4?'#22C55E':val>=0.2?'#EAB308':'#DC2626';}
-function ndviBar(val){return `<div class="popup-bar"><div class="popup-bar-fill" style="width:${Math.max(0,Math.min(100,val*100))}%;background:${ndviColor(val)}"></div></div>`;}
-function iezBar(val){return `<div class="popup-bar"><div class="popup-bar-fill" style="width:${Math.max(0,Math.min(100,val))}%;background:${iezColor(val)}"></div></div>`;}
-function sparkline(data,color){
-    if(!data||!data.length)return '';
-    const max=Math.max(...data,1);
-    const bars=data.map(v=>`<div style="height:${Math.max(2,Math.round(v/max*16))}px;background:${color}"></div>`).join('');
-    return `<div class="popup-sparkline">${bars}</div>`;
-}
-function formatDate(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'});}catch(e){return d;}}
-function formatDateTime(d){if(!d)return '—';try{return new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return d;}}
-function riskLevel(score){return score>=75?'CRITIQUE':score>=50?'ELEVE':score>=25?'MOYEN':'FAIBLE';}
-function riskColor(score){return score>=75?'#DC2626':score>=50?'#F97316':score>=25?'#EAB308':'#22C55E';}
-
-// ── POPUP BUILDERS ──
-function zonePopup(z){
-    const iez=z.current_iez||0;
-    const c=iezColor(iez);
-    let sections='';
-    if(z.ndvi||z.temperature||z.precipitation_7d||z.air_quality){
-        sections+='<div class="popup-section"><div class="popup-section-title">Donnees satellite</div><div class="popup-grid">';
-        if(z.ndvi)sections+=`<div class="popup-row"><span>NDVI</span><span style="color:${ndviColor(z.ndvi.value)}">${z.ndvi.value}</span></div>`;
-        if(z.temperature)sections+=`<div class="popup-row"><span>Temp.</span><span>${z.temperature.value}${z.temperature.unit||'°C'}</span></div>`;
-        if(z.precipitation_7d)sections+=`<div class="popup-row"><span>Precip. 7j</span><span>${z.precipitation_7d.value} mm</span></div>`;
-        if(z.air_quality)sections+=`<div class="popup-row"><span>${z.air_quality.variable}</span><span>${z.air_quality.value} ${z.air_quality.unit}</span></div>`;
-        sections+='</div>';
-        if(z.ndvi&&z.ndvi.source)sections+=`<div class="popup-source"><i class="fas fa-satellite-dish"></i> ${z.ndvi.source}</div>`;
-        sections+='</div>';
+function toggleLegendPanel() {
+    const p = document.getElementById('stats-panel');
+    if (!p) return;
+    if (window.innerWidth < 1024) {
+        openPanel('stats');
+    } else {
+        p.classList.toggle('active');
     }
-    if(z.risk){
-        sections+=`<div class="popup-section"><div class="popup-section-title">Analyse de risque</div>
-            <div class="popup-row"><span>Type</span><span>${(z.risk.type||'').replace(/_/g,' ')}</span></div>
-            <div class="popup-row"><span>Score</span><span style="color:${riskColor(z.risk.score)};font-weight:700">${z.risk.score}/100</span></div>
-            <div class="popup-row"><span>Niveau</span>${levelBadge(z.risk.level)}</div>
-            <div class="popup-bar"><div class="popup-bar-fill" style="width:${z.risk.score}%;background:${riskColor(z.risk.score)}"></div></div></div>`;
+}
+
+function openPanel(type) {
+    document.getElementById('panel-overlay')?.classList.add('active');
+    if (type === 'filter') {
+        const fp = document.getElementById('filter-panel');
+        fp?.classList.remove('collapsed');
+        fp?.classList.add('active');
+    } else {
+        document.getElementById('stats-panel')?.classList.add('active');
     }
-    if(z.iez_history&&z.iez_history.length>1){
-        sections+=`<div class="popup-section"><div class="popup-section-title">Evolution IEZ</div>${sparkline(z.iez_history,'#22C55E')}</div>`;
+}
+
+function closePanel() {
+    document.getElementById('panel-overlay')?.classList.remove('active');
+    const fp = document.getElementById('filter-panel');
+    if (window.innerWidth < 1024) {
+        fp?.classList.remove('active');
+    } else {
+        fp?.classList.add('collapsed');
     }
-    return `<div class="map-popup"><div class="popup-title"><span style="color:${c};font-size:16px">◉</span> ${z.name}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Type</span><span>${(z.zone_type||'-').replace(/_/g,' ')}</span></div>
-        <div class="popup-row"><span>Statut</span>${statusBadge(z.status)}</div>
-        <div class="popup-row"><span>IEZ</span><span style="color:${c};font-weight:700">${iez}</span></div>
-        <div class="popup-row"><span>Vert.</span><span>${(z.vulnerability_level||'-')}</span></div></div>
-        ${iezBar(iez)}${sections}
-        <a href="/zones/${z.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Details</a></div>`;
-}
-function firePopup(f){
-    return `<div class="map-popup"><div class="popup-title"><span style="color:#DC2626;font-size:14px">🔥</span> Feu actif</div>
-        <div class="popup-grid"><div class="popup-row"><span>Confiance</span>${confBadge(f.confidence||'nominal')}</div>
-        <div class="popup-row"><span>Satellite</span><span>${f.satellite||'MODIS'}</span></div>
-        <div class="popup-row"><span>FRP</span><span>${f.frp||'-'} MW</span></div>
-        <div class="popup-row"><span>Periode</span><span>${f.daynight==='D'?'Jour':'Nuit'}</span></div>
-        <div class="popup-row"><span>Detection</span><span>${formatDateTime(f.detected_at)}</span></div></div>
-        <div class="popup-source"><i class="fas fa-satellite-dish"></i> NASA FIRMS</div></div>`;
-}
-function stationPopup(s){
-    const batColor=s.battery_level>60?'#22C55E':s.battery_level>30?'#EAB308':'#DC2626';
-    return `<div class="map-popup"><div class="popup-title"><span style="color:#2563EB;font-size:12px">📡</span> ${s.code}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Nom</span><span>${s.name}</span></div>
-        <div class="popup-row"><span>Statut</span>${statusBadge(s.status)}</div>
-        <div class="popup-row"><span>Batterie</span><span style="color:${batColor}">${s.battery_level!=null?s.battery_level+'%':'—'}</span></div>
-        <div class="popup-row"><span>Type</span><span>${s.is_simulated?'Simule':'Reel'}</span></div></div>
-        <div class="popup-bar"><div class="popup-bar-fill" style="width:${s.battery_level||0}%;background:${batColor}"></div></div>
-        <a href="/stations/${s.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Details</a></div>`;
-}
-function incidentPopup(inc){
-    const desc=inc.description?inc.description.substring(0,80)+(inc.description.length>80?'...':''):'';
-    const riskVal=inc.risk_score!=null?`<div class="popup-row"><span>Score</span><span style="color:${riskColor(inc.risk_score)}">${inc.risk_score}/100</span></div>`:'';
-    return `<div class="map-popup"><div class="popup-title"><span style="color:#F97316;font-size:12px">⚠</span> ${inc.title}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Type</span><span>${(inc.incident_type||'-').replace(/_/g,' ')}</span></div>
-        <div class="popup-row"><span>Severite</span>${sevBadge(inc.severity)}</div>
-        <div class="popup-row"><span>Statut</span>${statusBadge(inc.status||'NEW')}</div>
-        ${riskVal}<div class="popup-row"><span>Date</span><span>${formatDateTime(inc.detected_at)}</span></div></div>
-        ${desc?`<div style="margin-top:3px;font-size:10px;color:#64748b;line-height:1.3">${desc}</div>`:''}
-        <a href="/incidents/${inc.id}/" class="popup-link"><i class="fas fa-arrow-right"></i> Details</a></div>`;
-}
-function anomalyPopup(a){
-    const zone=(allData.zones||[]).find(z=>z.id===a.zone_id);
-    return `<div class="map-popup"><div class="popup-title"><span style="color:#8B5CF6;font-size:12px">🔍</span> Anomalie</div>
-        <div class="popup-grid"><div class="popup-row"><span>Type</span><span>${(a.anomaly_type||'-').replace(/_/g,' ')}</span></div>
-        <div class="popup-row"><span>Severite</span>${sevBadge(a.severity)}</div>
-        <div class="popup-row"><span>Score</span><span>${a.score!=null?a.score+'/100':'—'}</span></div>
-        <div class="popup-row"><span>Zone</span><span>${zone?zone.name:'—'}</span></div>
-        <div class="popup-row"><span>Metric</span><span>${a.metric||'—'}</span></div>
-        <div class="popup-row"><span>Valeur</span><span>${a.current_value!=null?a.current_value:'—'}</span></div></div></div>`;
-}
-function ndviPopup(v){
-    const zone=(allData.zones||[]).find(z=>z.id===v.zone_id);
-    return `<div class="map-popup"><div class="popup-title"><span style="color:${ndviColor(v.value)};font-size:12px">🌿</span> NDVI — ${zone?zone.name:'—'}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Valeur</span><span style="color:${ndviColor(v.value)};font-weight:700">${v.value}</span></div>
-        <div class="popup-row"><span>Source</span><span>${v.source||'Sentinel-2'}</span></div>
-        <div class="popup-row"><span>Date</span><span>${formatDate(v.acquisition_date)}</span></div></div>
-        ${ndviBar(v.value)}
-        <div class="popup-source"><i class="fas fa-satellite-dish"></i> ${v.source||'Sentinel-2/Landsat'}</div></div>`;
-}
-function no2Popup(p){
-    const zone=(allData.zones||[]).find(z=>z.id===p.zone_id);
-    const vc=p.value>40?'#DC2626':p.value>20?'#F97316':p.value>10?'#EAB308':'#22C55E';
-    return `<div class="map-popup"><div class="popup-title"><span style="color:#A855F7;font-size:12px">🌫</span> ${p.variable} — ${zone?zone.name:'—'}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Valeur</span><span style="color:${vc};font-weight:700">${p.value} ${p.unit}</span></div>
-        <div class="popup-row"><span>Date</span><span>${formatDate(p.observed_at)}</span></div></div>
-        <div class="popup-source"><i class="fas fa-satellite-dish"></i> Sentinel-5P / OpenAQ</div></div>`;
-}
-function riskPopup(r){
-    const zone=(allData.zones||[]).find(z=>z.id===r.zone_id);
-    let factorsHtml='';
-    if(r.factors){
-        try{const f=typeof r.factors==='string'?JSON.parse(r.factors):r.factors;
-        if(typeof f==='object'&&f!==null){factorsHtml=Object.keys(f).slice(0,3).map(k=>`<div class="popup-row"><span>${k.replace(/_/g,' ')}</span><span>${typeof f[k]==='number'?f[k].toFixed(1):f[k]}</span></div>`).join('');}}catch(e){}
-    }
-    return `<div class="map-popup"><div class="popup-title"><span style="color:${riskColor(r.risk_score)};font-size:12px">🛡</span> Risque — ${zone?zone.name:'—'}</div>
-        <div class="popup-grid"><div class="popup-row"><span>Type</span><span>${(r.risk_type||'-').replace(/_/g,' ')}</span></div>
-        <div class="popup-row"><span>Score</span><span style="color:${riskColor(r.risk_score)};font-weight:700">${r.risk_score}/100</span></div>
-        <div class="popup-row"><span>Niveau</span>${levelBadge(r.level)}</div>
-        <div class="popup-row"><span>Date</span><span>${formatDate(r.calculated_at)}</span></div></div>
-        ${factorsHtml?`<div class="popup-section"><div class="popup-section-title">Facteurs</div>${factorsHtml}</div>`:''}
-        <div class="popup-bar"><div class="popup-bar-fill" style="width:${r.risk_score}%;background:${riskColor(r.risk_score)}"></div></div></div>`;
+    document.getElementById('stats-panel')?.classList.remove('active');
+    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
 }
 
-// ── PANELS ──
-function openPanel(type){
-    document.getElementById('panel-overlay').classList.add('active');
-    if(type==='filter')document.getElementById('filter-panel').classList.add('active');
-    else document.getElementById('stats-panel').classList.add('active');
-}
-function closePanel(){
-    document.getElementById('panel-overlay').classList.remove('active');
-    document.getElementById('filter-panel').classList.remove('active');
-    document.getElementById('stats-panel').classList.remove('active');
-    setTimeout(()=>map.invalidateSize(),300);
-}
-
-// ── LOAD DATA ──
-function loadMapData(){
-    return fetch('/api/map/').then(r=>r.json()).then(d=>{
-        allData=d;
-        const counts={zones:(d.zones||[]).length,fires:(d.fires||[]).length,stations:(d.stations||[]).length,incidents:(d.incidents||[]).length,anomalies:(d.anomalies||[]).length,vegetation:(d.vegetation||[]).length,atmosphere:(d.atmosphere||[]).length,risks:(d.risks||[]).length};
-        document.getElementById('map-status').textContent=`${counts.zones} zones | ${counts.fires} feux | ${counts.stations} stations | ${counts.incidents} incidents | ${counts.anomalies} anomalies | ${counts.vegetation} NDVI | ${counts.atmosphere} atmo | ${counts.risks} risques`;
-        document.getElementById('last-update').textContent=new Date().toLocaleTimeString('fr-FR');
-        document.getElementById('stat-zones').textContent=counts.zones;
-        document.getElementById('stat-fires').textContent=counts.fires;
-        document.getElementById('stat-incidents').textContent=counts.incidents;
-        document.getElementById('stat-anomalies').textContent=counts.anomalies;
-        const ndviVals=(d.zones||[]).filter(z=>z.ndvi).map(z=>z.ndvi.value);
-        if(ndviVals.length){document.getElementById('stat-ndvi').textContent=(ndviVals.reduce((a,b)=>a+b,0)/ndviVals.length).toFixed(2);}
-        const no2Vals=(d.atmosphere||[]).filter(p=>p.variable==='NO2');
-        if(no2Vals.length){document.getElementById('stat-no2').textContent=`${no2Vals[0].value} ${no2Vals[0].unit}`;}
-        buildLayers();
-        applyFilters();
-    }).catch(e=>{document.getElementById('map-status').textContent='Erreur: '+e.message;});
-}
-
-function buildLayers(){
-    if(grps.zones)map.removeLayer(grps.zones);
-    grps.zones=L.layerGroup();
-    (allData.zones||[]).forEach(z=>{
-        if(!z.latitude||!z.longitude)return;
-        const c=zoneColor(z);
-        const m=L.circleMarker([z.latitude,z.longitude],{radius:14,color:c,fillColor:c,fillOpacity:0.25,weight:3});
-        m._data={...z,_layer:'zones'};
-        m.bindPopup(zonePopup(z),{maxWidth:280,maxHeight:350});
-        m.on('mouseover',function(){showZoneInfo(z);});
-        m.addTo(grps.zones);
-    });
-
-    if(grps.fires)map.removeLayer(grps.fires);
-    grps.fires=L.markerClusterGroup({maxClusterRadius:40,spiderfyOnMaxZoom:true,showCoverageOnHover:false,
-        iconCreateFunction:function(cluster){
-            const count=cluster.getChildCount();
-            const size=count<10?'small':count<50?'medium':'large';
-            return L.divIcon({html:`<div class="cluster-${size} w-10 h-10 rounded-full flex items-center justify-center bg-surface-card border-2 border-risk-critical/50 shadow-card"><span class="text-xs font-bold text-risk-critical">${count}</span></div>`,iconSize:[40,40],className:''});
+function filterZonesByName(query) {
+    if (!query) { if (map) map.setView([14.5, -4.0], 6); return; }
+    const q = query.toLowerCase();
+    grps.hydrology?.eachLayer(l => {
+        if (!l._data) return;
+        const match = l._data.nom?.toLowerCase().includes(q) || l._data.cours_d_eau?.toLowerCase().includes(q);
+        if (match) {
+            map.addLayer(l);
+            map.setView([l._data.latitude, l._data.longitude], 9);
         }
     });
-    (allData.fires||[]).forEach(f=>{
-        const m=L.marker([f.latitude,f.longitude],{icon:fireIcon(f.confidence)});
-        m._data={...f,_layer:'fires'};
-        m.bindPopup(firePopup(f),{maxWidth:280});
-        m.addTo(grps.fires);
-    });
-
-    if(grps.stations)map.removeLayer(grps.stations);
-    grps.stations=L.layerGroup();
-    (allData.stations||[]).forEach(s=>{
-        if(!s.latitude||!s.longitude)return;
-        const m=L.marker([s.latitude,s.longitude],{icon:stationIcon(s.status)});
-        m._data={...s,_layer:'stations'};
-        m.bindPopup(stationPopup(s),{maxWidth:280});
-        m.addTo(grps.stations);
-    });
-
-    if(grps.incidents)map.removeLayer(grps.incidents);
-    grps.incidents=L.layerGroup();
-    (allData.incidents||[]).forEach(inc=>{
-        if(!inc.latitude||!inc.longitude)return;
-        const m=L.marker([inc.latitude,inc.longitude],{icon:incidentIcon(inc.severity)});
-        m._data={...inc,_layer:'incidents'};
-        m.bindPopup(incidentPopup(inc),{maxWidth:280});
-        m.addTo(grps.incidents);
-    });
-
-    if(grps.anomalies)map.removeLayer(grps.anomalies);
-    grps.anomalies=L.layerGroup();
-    (allData.anomalies||[]).forEach(a=>{
-        const zone=(allData.zones||[]).find(z=>z.id===a.zone_id);
-        if(!zone||!zone.latitude||!zone.longitude)return;
-        const offset=Math.random()*0.3-0.15;
-        const m=L.marker([zone.latitude+offset,zone.longitude+offset],{icon:anomalyIcon(a.anomaly_type)});
-        m._data={...a,_layer:'anomalies'};
-        m.bindPopup(anomalyPopup(a),{maxWidth:280});
-        m.addTo(grps.anomalies);
-    });
-
-    if(grps.ndvi)map.removeLayer(grps.ndvi);
-    grps.ndvi=L.layerGroup();
-    (allData.vegetation||[]).forEach(v=>{
-        if(!v.latitude||!v.longitude||v.value==null)return;
-        const m=L.marker([v.latitude,v.longitude],{icon:ndviIcon(v.value)});
-        m._data={...v,_layer:'ndvi'};
-        m.bindPopup(ndviPopup(v),{maxWidth:280});
-        m.addTo(grps.ndvi);
-    });
-
-    if(grps.no2)map.removeLayer(grps.no2);
-    grps.no2=L.layerGroup();
-    (allData.atmosphere||[]).forEach(p=>{
-        if(!p.latitude||!p.longitude||p.value==null)return;
-        const m=L.marker([p.latitude,p.longitude],{icon:no2Icon(p.value)});
-        m._data={...p,_layer:'no2'};
-        m.bindPopup(no2Popup(p),{maxWidth:280});
-        m.addTo(grps.no2);
-    });
-
-    if(grps.risks)map.removeLayer(grps.risks);
-    grps.risks=L.layerGroup();
-    (allData.risks||[]).forEach(r=>{
-        if(!r.latitude||!r.longitude)return;
-        const m=L.marker([r.latitude,r.longitude],{icon:riskIcon(r.level)});
-        m._data={...r,_layer:'risks'};
-        m.bindPopup(riskPopup(r),{maxWidth:280});
-        m.addTo(grps.risks);
-    });
-
-    buildHeatmap();
 }
 
-function buildHeatmap(){
-    if(grps.heatmap)map.removeLayer(grps.heatmap);
-    const points=(allData.fires||[]).map(f=>[f.latitude,f.longitude,f.frp?f.frp/200:0.5]);
-    grps.heatmap=L.heatLayer(points,{radius:25,blur:15,maxZoom:10,gradient:{0.2:'blue',0.4:'lime',0.6:'yellow',0.8:'orange',1:'red'}});
+function resetFilters() {
+    document.getElementById('search-zone').value = '';
+    switchBaseLayer('light');
+    map.setView([14.5, -4.0], 6);
 }
 
-function applyFilters(){
-    const sevFilter=document.getElementById('filter-incident-type')?.value||'';
-    const fireConf=document.getElementById('filter-fire-confidence')?.value||'';
-    const zoneType=document.getElementById('filter-zone-type')?.value||'';
-    Object.keys(grps).forEach(key=>{
-        if(!grps[key]||key==='heatmap')return;
-        if(typeof grps[key].eachLayer!=='function')return;
-        grps[key].eachLayer(layer=>{
-            if(!layer._data)return;
-            let show=true;
-            const d=layer._data;
-            if((d._layer==='incidents'||d._layer==='anomalies')&&!activeSeverities.has(d.severity))show=false;
-            if(d._layer==='incidents'&&sevFilter&&d.incident_type!==sevFilter)show=false;
-            if(d._layer==='fires'&&fireConf&&d.confidence!==fireConf)show=false;
-            if(d._layer==='zones'&&zoneType&&d.zone_type!==zoneType)show=false;
-            if(show){if(!map.hasLayer(layer))grps[key].addLayer(layer);}
-            else{if(map.hasLayer(layer))grps[key].removeLayer(layer);}
-        });
-    });
+function refreshMap() {
+    const s = document.getElementById('map-status');
+    if (s) s.textContent = 'Actualisation des flux en cours...';
+    loadMapData();
 }
-
-function toggleSeverity(sev){
-    if(activeSeverities.has(sev))activeSeverities.delete(sev);
-    else activeSeverities.add(sev);
-    document.querySelectorAll('.severity-btn').forEach(b=>{b.style.opacity=activeSeverities.has(b.dataset.sev)?'1':'0.3';});
-    applyFilters();
-}
-
-function filterZonesByName(query){
-    if(!query){applyFilters();return;}
-    const q=query.toLowerCase();
-    grps.zones?.eachLayer(layer=>{
-        if(!layer._data)return;
-        const match=layer._data.name?.toLowerCase().includes(q);
-        if(match){map.addLayer(layer);map.setView([layer._data.latitude,layer._data.longitude],8);}
-        else{map.removeLayer(layer);}
-    });
-}
-
-function resetFilters(){
-    activeSeverities=new Set(['CRITICAL','HIGH','MEDIUM','LOW']);
-    document.querySelectorAll('.severity-btn').forEach(b=>b.style.opacity='1');
-    document.getElementById('filter-incident-type').value='';
-    document.getElementById('filter-fire-confidence').value='';
-    document.getElementById('filter-zone-type').value='';
-    document.getElementById('search-zone').value='';
-    Object.keys(vis).forEach(k=>vis[k]=false);
-    document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
-    document.querySelectorAll('.layer-btn').forEach(b=>b.classList.remove('active'));
-    Object.keys(grps).forEach(k=>{if(!grps[k])return;if(!map.hasLayer(grps[k]))map.addLayer(grps[k]);});
-    applyFilters();
-    map.setView([17.5,-3.0],6);
-}
-
-function toggleLayer(name){
-    vis[name]=!vis[name];
-    const cb=document.getElementById('layer-'+name);if(cb)cb.checked=vis[name];
-    const btn=document.getElementById('btn-'+name);if(btn){if(vis[name])btn.classList.add('active');else btn.classList.remove('active');}
-    if(name==='heatmap'){if(vis[name]){if(grps.heatmap)grps.heatmap.addTo(map);}else{if(grps.heatmap)map.removeLayer(grps.heatmap);}}
-    else{if(vis[name]){if(grps[name])map.addLayer(grps[name]);}else{if(grps[name])map.removeLayer(grps[name]);}}
-}
-
-function showZoneInfo(z){
-    const el=document.getElementById('hovered-zone-info');
-    const content=document.getElementById('hovered-zone-content');
-    el.classList.remove('hidden');
-    const iez=z.current_iez||0;
-    const color=iez>=85?'text-risk-normal':iez>=65?'text-risk-vigil':iez>=40?'text-risk-high':'text-risk-critical';
-    let extra='';
-    if(z.ndvi)extra+=`<div class="flex justify-between"><span>NDVI</span><span style="color:${ndviColor(z.ndvi.value)}" class="font-semibold">${z.ndvi.value}</span></div>`;
-    if(z.temperature)extra+=`<div class="flex justify-between"><span>Temp.</span><span class="font-semibold">${z.temperature.value}°C</span></div>`;
-    if(z.air_quality)extra+=`<div class="flex justify-between"><span>${z.air_quality.variable}</span><span class="font-semibold">${z.air_quality.value} ${z.air_quality.unit}</span></div>`;
-    if(z.risk)extra+=`<div class="flex justify-between"><span>Risque</span><span style="color:${riskColor(z.risk.score)}" class="font-semibold">${z.risk.score}/100</span></div>`;
-    content.innerHTML=`<div class="font-semibold">${z.name}</div>
-        <div class="flex justify-between mt-0.5"><span>Type</span><span>${(z.zone_type||'-').replace(/_/g,' ')}</span></div>
-        <div class="flex justify-between"><span>IEZ</span><span class="font-bold ${color}">${iez}</span></div>
-        <div class="flex justify-between"><span>Statut</span><span>${z.status}</span></div>${extra}`;
-}
-
-function toggleAutoRefresh(){
-    const btn=document.getElementById('btn-auto-refresh');
-    if(autoRefreshInterval){clearInterval(autoRefreshInterval);autoRefreshInterval=null;btn.className='px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft';btn.innerHTML='<i class="fas fa-sync-alt sm:mr-1"></i><span class="hidden sm:inline"> Auto-refresh</span>';}
-    else{autoRefreshInterval=setInterval(refreshMap,60000);btn.className='px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-risk-normal/10 border-risk-normal/30 text-risk-normal';btn.innerHTML='<i class="fas fa-sync-alt sm:mr-1 pulse-dot"></i><span class="hidden sm:inline"> Auto-refresh ON</span>';}
-}
-
-function refreshMap(){document.getElementById('map-status').textContent='Actualisation...';loadMapData();}
-
-loadMapData();
 </script>
 {% endblock %}

@@ -76,6 +76,12 @@ class AlertEngine:
                 severity="MEDIUM",
                 description="Niveau élevé de polluants atmosphériques",
             ),
+            AlertRule(
+                name="FLOOD_WARNING",
+                alert_type="FLOOD",
+                severity="HIGH",
+                description="Débit fluvial élevé ou crue observée par satellite",
+            ),
         ]
 
     def evaluate_zone(self, zone) -> List[Dict[str, Any]]:
@@ -151,6 +157,18 @@ class AlertEngine:
                 severity="HIGH",
                 source="Capteurs",
                 metadata=water_data,
+            ))
+
+        # Rule: FLOOD_WARNING
+        flood_data = self._check_flood_warning(zone)
+        if flood_data["triggered"]:
+            triggered.append(self._make_alert(
+                zone=zone, rule_name="FLOOD_WARNING",
+                title=f"Vigilance crue — {zone.name}",
+                description=flood_data["description"],
+                severity=flood_data.get("severity", "HIGH"),
+                source="GloFAS / NASA LANCE Flood",
+                metadata=flood_data,
             ))
 
         return triggered
@@ -347,6 +365,44 @@ class AlertEngine:
             "triggered": triggered,
             "issues": issues,
             "description": f"Anomalies eau: {', '.join(issues)}" if issues else "Eau normale",
+        }
+
+    def _check_flood_warning(self, zone) -> Dict[str, Any]:
+        """Check hydrological flood risks from GloFAS and LANCE Flood."""
+        from apps.water.models import RiverForecast, FloodObservation, HydrologicalStation
+        from django.db.models import Q
+
+        now = timezone.now()
+        station = HydrologicalStation.objects.filter(
+            Q(zone=zone) | Q(nom__icontains=zone.name.split()[0])
+        ).first()
+
+        glofas_alert = False
+        discharge = 0.0
+        if station:
+            f = RiverForecast.objects.filter(
+                station=station,
+                date_run__gte=(now - timedelta(days=3)).date()
+            ).order_by("-date_run", "leadtime_hours").first()
+            if f and (f.discharge_m3s >= station.seuil_alerte or f.alert_level in ["ORANGE", "RED"]):
+                glofas_alert = True
+                discharge = f.discharge_m3s
+
+        floods = FloodObservation.objects.filter(
+            Q(zone=zone) | Q(zone__isnull=True),
+            observation_date__gte=(now - timedelta(days=5)).date()
+        ).order_by("-observation_date")
+        flooded_km2 = floods.first().flooded_area_km2 if floods.exists() else 0.0
+
+        triggered = glofas_alert or (flooded_km2 >= 10.0)
+        sev = "CRITICAL" if (glofas_alert and flooded_km2 >= 5.0) else "HIGH"
+
+        return {
+            "triggered": triggered,
+            "severity": sev,
+            "discharge_m3s": discharge,
+            "flooded_area_km2": flooded_km2,
+            "description": f"Risque de crue/inondation : Débit {discharge:.0f} m³/s, {flooded_km2:.1f} km² sous eau observés.",
         }
 
     @staticmethod

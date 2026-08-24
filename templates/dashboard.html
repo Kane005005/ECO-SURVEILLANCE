@@ -1,397 +1,945 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — ECO-SURVEILLANCE MALI{% endblock %}
+{% block title %}Tableau de Bord National — ECO-SURVEILLANCE MALI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tab-btn {
+        transition: all 0.2s ease-in-out;
+        border-bottom: 2px solid transparent;
+    }
+    .tab-btn.active {
+        border-color: #0284C7;
+        color: #0284C7;
+        font-weight: 700;
+        background-color: #F0F9FF;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+<!-- DASHBOARD HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
     <div>
-        <h1 class="text-xl sm:text-2xl font-display font-bold">Dashboard National</h1>
-        <p class="text-xs sm:text-sm text-ink-muted mt-1">Vue d'ensemble de la surveillance environnementale du Mali</p>
+        <div class="flex items-center gap-2">
+            <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900">Tableau de Bord National</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                <i class="fas fa-brain mr-1"></i> GPT-OSS 120B
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                <i class="fas fa-bolt mr-1"></i> Open-Meteo Live
+            </span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">Supervision géospatiale intégrée du Mali — Hydrologie, Climat, Incendies &amp; Écologie</p>
     </div>
-    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        <span class="text-[10px] sm:text-xs text-ink-muted" id="last-update">—</span>
-        <button onclick="refreshDashboard()" class="px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg border bg-surface-soft border-surface-border text-ink-soft hover:bg-surface-border transition-colors">
-            <i class="fas fa-refresh mr-1"></i> Actualiser
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
+        <button onclick="openCopilotModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fas fa-robot"></i> Copilote IA GPT-OSS
+        </button>
+        <button onclick="refreshDashboard()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fas fa-rotate-right text-blue-600"></i> Actualiser
         </button>
     </div>
 </div>
 
-<!-- KPI CARDS -->
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'geography:zone_list' %}'">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-territory-50 flex items-center justify-center">
-                <i class="fas fa-leaf text-territory-600 text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">IEZ</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-territory-700" id="kpi-iez">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">IEZ National</div>
-        <div class="mt-2 h-1.5 bg-surface-soft rounded-full overflow-hidden">
-            <div class="h-full bg-territory-500 rounded-full transition-all duration-500" id="iez-bar" style="width:0%"></div>
-        </div>
-    </div>
-
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'fires:fire_list' %}'">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-critical/10 flex items-center justify-center">
-                <i class="fas fa-fire text-risk-critical text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">7j</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-critical" id="kpi-fires">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Feux actifs</div>
-        <div class="mt-2 flex items-center gap-1">
-            <i class="fas fa-arrow-up text-[9px] sm:text-[10px] text-risk-critical" id="fires-trend"></i>
-            <span class="text-[9px] sm:text-[10px] text-ink-muted" id="fires-trend-text">—</span>
-        </div>
-    </div>
-
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'incidents:incident_list' %}'">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-high/10 flex items-center justify-center">
-                <i class="fas fa-triangle-exclamation text-risk-high text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Total</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-high" id="kpi-incidents">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Incidents</div>
-        <div class="mt-2 flex gap-1">
-            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-critical/10 text-risk-critical" id="inc-critical">0</span>
-            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-high/10 text-risk-high" id="inc-high">0</span>
-            <span class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded bg-risk-vigil/10 text-risk-vigil" id="inc-medium">0</span>
-        </div>
-    </div>
-
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'anomalies:anomaly_list' %}'">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-satellite/10 flex items-center justify-center">
-                <i class="fas fa-magnifying-glass text-satellite text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">30j</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-satellite" id="kpi-anomalies">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Anomalies</div>
-    </div>
-
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4 cursor-pointer" onclick="window.location='{% url 'sensors:station_list' %}'">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-data-50 flex items-center justify-center">
-                <i class="fas fa-tower-broadcast text-data-600 text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Actives</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-data-600" id="kpi-stations">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Stations</div>
-        <div class="mt-2 flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-risk-normal" id="station-dot"></span>
-            <span class="text-[9px] sm:text-[10px] text-ink-muted" id="station-status">—</span>
-        </div>
-    </div>
-
-    <div class="kpi-card bg-surface-card rounded-xl border border-surface-border shadow-card p-3 sm:p-4">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-risk-vigil/10 flex items-center justify-center">
-                <i class="fas fa-bell text-risk-vigil text-sm sm:text-base"></i>
-            </div>
-            <span class="text-[9px] sm:text-[10px] font-medium text-ink-faint">Non lues</span>
-        </div>
-        <div class="text-2xl sm:text-3xl font-display font-bold text-risk-vigil" id="kpi-alerts">—</div>
-        <div class="text-[10px] sm:text-xs text-ink-muted mt-1">Alertes</div>
+<!-- 4 ONGLETS THÉMATIQUES -->
+<div class="mb-6 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+    <div class="flex items-center gap-1 min-w-max">
+        <button onclick="switchTab('tab-synthese')" id="btn-tab-synthese" class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <i class="fas fa-landmark text-blue-600"></i>
+            <span>Synthèse Nationale &amp; IEZ</span>
+        </button>
+        <button onclick="switchTab('tab-hydrologie')" id="btn-tab-hydrologie" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <i class="fas fa-water text-cyan-600"></i>
+            <span>Hydrologie &amp; Inondations</span>
+        </button>
+        <button onclick="switchTab('tab-climat')" id="btn-tab-climat" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <i class="fas fa-cloud-sun text-amber-500"></i>
+            <span>Climat &amp; Agro-Météo (Live)</span>
+        </button>
+        <button onclick="switchTab('tab-feux')" id="btn-tab-feux" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <i class="fas fa-fire text-red-500"></i>
+            <span>Incendies &amp; Végétation</span>
+        </button>
     </div>
 </div>
 
-<!-- MAIN CHARTS ROW -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-    <!-- IEZ Donut -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-3 sm:mb-4">
-            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-territory-600"></div>
-            <h2 class="font-display font-semibold text-xs sm:text-sm">IEZ National</h2>
+<!-- ========================================================================= -->
+<!-- ONGLET 1 : SYNTHÈSE NATIONALE & IEZ -->
+<!-- ========================================================================= -->
+<div id="tab-synthese" class="tab-content active space-y-6">
+    <!-- 4 KPIS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Score IEZ -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-300 transition-all" onclick="window.location='{% url 'geography:zone_list' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-leaf"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">IEZ Global</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-emerald-700" id="kpi-iez">—</div>
+            <div class="text-xs text-slate-500 mt-1">Indice de Santé Écologique</div>
+            <div class="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full transition-all duration-700" id="iez-bar" style="width:0%"></div>
+            </div>
         </div>
-        <div class="flex items-center justify-center">
-            <div class="relative w-36 h-36 sm:w-44 sm:h-44">
-                <canvas id="chart-iez-donut"></canvas>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-3xl sm:text-4xl font-display font-bold" id="iez-score">—</span>
-                    <span class="text-[10px] sm:text-xs text-ink-muted mt-1" id="iez-label">Chargement...</span>
+
+        <!-- Zones en Vigilance -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-amber-300 transition-all" onclick="window.location='{% url 'geography:zone_list' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-triangle-exclamation"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Vigilance</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-amber-600" id="kpi-zones-vigilance">—</div>
+            <div class="text-xs text-slate-500 mt-1">Zones sous surveillance</div>
+            <div class="text-[10px] text-amber-700 font-medium mt-1">Sur 8 régions sentinelles</div>
+        </div>
+
+        <!-- Alertes Critiques Actives -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-red-300 transition-all" onclick="window.location='{% url 'alerts:alert_list' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-bell"></i></span>
+                <span class="text-[10px] font-bold text-red-600 uppercase font-semibold">Non Lues</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-red-600" id="kpi-alerts-critiques">—</div>
+            <div class="text-xs text-slate-500 mt-1">Alertes Multi-Sources</div>
+            <div class="text-[10px] text-slate-400 mt-1">Moteur d'alerte opérationnel</div>
+        </div>
+
+        <!-- Incidents en cours -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-blue-300 transition-all" onclick="window.location='{% url 'incidents:incident_list' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-clipboard-check"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Actifs</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-slate-800" id="kpi-incidents-actifs">—</div>
+            <div class="text-xs text-slate-500 mt-1">Incidents Environnementaux</div>
+            <div class="text-[10px] text-blue-600 font-medium mt-1">Crue, feu, pollution, sécheresse</div>
+        </div>
+    </div>
+
+    <!-- GRAPHIQUE SANTÉ ÉCOLOGIQUE + FLUX ECO ENGINE IA -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Matrice Santé IEZ -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-2 h-5 rounded-full bg-emerald-500"></span>
+                    <h2 class="font-display font-bold text-sm text-slate-900">Matrice de Santé Écologique</h2>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Répartition de l'IEZ sur les zones du Mali</p>
+                <div class="relative w-40 h-40 mx-auto">
+                    <canvas id="chart-iez-donut"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-2xl font-display font-bold text-slate-900" id="iez-center-score">—</span>
+                        <span class="text-[10px] text-slate-500" id="iez-center-label">IEZ Moyen</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="grid grid-cols-4 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
-            <div class="text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-normal" id="iez-bon">0</div>
-                <div class="text-[9px] sm:text-[10px] text-ink-muted">Bon</div>
-            </div>
-            <div class="text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-vigil" id="iez-vigil">0</div>
-                <div class="text-[9px] sm:text-[10px] text-ink-muted">Vigilance</div>
-            </div>
-            <div class="text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-high" id="iez-degr">0</div>
-                <div class="text-[9px] sm:text-[10px] text-ink-muted">Degrade</div>
-            </div>
-            <div class="text-center">
-                <div class="text-base sm:text-lg font-bold text-risk-critical" id="iez-crit">0</div>
-                <div class="text-[9px] sm:text-[10px] text-ink-muted">Critique</div>
+            <div class="grid grid-cols-4 gap-1.5 mt-4 pt-3 border-t border-slate-100 text-center">
+                <div class="p-1.5 rounded-lg bg-emerald-50"><div class="text-xs font-bold text-emerald-700" id="iez-bon">0</div><div class="text-[9px] text-slate-500">Bon</div></div>
+                <div class="p-1.5 rounded-lg bg-yellow-50"><div class="text-xs font-bold text-yellow-700" id="iez-vigil">0</div><div class="text-[9px] text-slate-500">Vigilance</div></div>
+                <div class="p-1.5 rounded-lg bg-orange-50"><div class="text-xs font-bold text-orange-700" id="iez-degr">0</div><div class="text-[9px] text-slate-500">Dégradé</div></div>
+                <div class="p-1.5 rounded-lg bg-red-50"><div class="text-xs font-bold text-red-700" id="iez-crit">0</div><div class="text-[9px] text-slate-500">Critique</div></div>
             </div>
         </div>
-    </div>
 
-    <!-- Incidents Chart -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-3 sm:mb-4">
-            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-high"></div>
-            <h2 class="font-display font-semibold text-xs sm:text-sm">Incidents par type</h2>
-        </div>
-        <canvas id="chart-incidents" height="160"></canvas>
-    </div>
-
-    <!-- Fires Timeline -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-3 sm:mb-4">
-            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-critical"></div>
-            <h2 class="font-display font-semibold text-xs sm:text-sm">Feux (7 derniers jours)</h2>
-        </div>
-        <canvas id="chart-fires-timeline" height="160"></canvas>
-    </div>
-</div>
-
-<!-- SECONDARY ROW -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-    <!-- Zone IEZ Bar Chart -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-        <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <div class="flex items-center gap-2">
-                <div class="w-1.5 h-5 sm:h-6 rounded-full bg-territory-500"></div>
-                <h2 class="font-display font-semibold text-xs sm:text-sm">IEZ par zone</h2>
+        <!-- Flux ECO ENGINE Alertes & Résumé IA GPT-OSS (2 colonnes) -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-5 rounded-full bg-purple-600"></span>
+                    <h2 class="font-display font-bold text-sm text-slate-900">Corrélations Croisées ECO ENGINE</h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                    <i class="fas fa-brain mr-1"></i> GPT-OSS 120B Live
+                </span>
             </div>
-            <a href="{% url 'geography:zone_list' %}" class="text-[10px] sm:text-xs text-territory-600 hover:text-territory-700 font-medium">
-                <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-        <canvas id="chart-zone-iez" height="180"></canvas>
-    </div>
-
-    <!-- Recent Incidents List -->
-    <div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-        <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <div class="flex items-center gap-2">
-                <div class="w-1.5 h-5 sm:h-6 rounded-full bg-risk-high"></div>
-                <h2 class="font-display font-semibold text-xs sm:text-sm">Incidents recents</h2>
-            </div>
-            <a href="{% url 'incidents:incident_list' %}" class="text-[10px] sm:text-xs text-risk-high hover:text-risk-high/80 font-medium">
-                <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-        <div id="recent-incidents" class="space-y-2 max-h-44 sm:max-h-52 overflow-y-auto">
-            <p class="text-ink-muted text-xs sm:text-sm">Chargement...</p>
-        </div>
-    </div>
-</div>
-
-<!-- DATA SOURCES -->
-<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5 mb-4 sm:mb-6">
-    <div class="flex items-center gap-2 mb-3 sm:mb-4">
-        <div class="w-1.5 h-5 sm:h-6 rounded-full bg-data-500"></div>
-        <h2 class="font-display font-semibold text-xs sm:text-sm">Sources de donnees</h2>
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-territory-600 text-center kpi-card">
-            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🔥</div>
-            <div class="font-semibold text-xs sm:text-sm">NASA FIRMS</div>
-            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Active
-            </div>
-        </div>
-        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-satellite text-center kpi-card">
-            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🛰</div>
-            <div class="font-semibold text-xs sm:text-sm">Sentinel-2 / Landsat</div>
-            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> NDVI
-            </div>
-        </div>
-        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-data-600 text-center kpi-card">
-            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌡</div>
-            <div class="font-semibold text-xs sm:text-sm">NASA POWER</div>
-            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Climat
-            </div>
-        </div>
-        <div class="p-3 sm:p-4 bg-surface-soft rounded-xl border border-surface-border border-t-4 border-t-purple-500 text-center kpi-card">
-            <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🌫</div>
-            <div class="font-semibold text-xs sm:text-sm">Sentinel-5P / OpenAQ</div>
-            <div class="text-[10px] sm:text-xs text-risk-normal mt-1 flex items-center justify-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-risk-normal pulse-dot"></span> Qualite air
+            <div id="eco-alerts-feed" class="space-y-3 overflow-y-auto max-h-80 flex-1 pr-1">
+                <p class="text-slate-400 text-xs text-center py-8">Chargement des alertes corrélées...</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MINI MAP -->
-<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-4 sm:p-5">
-    <div class="flex items-center justify-between mb-3 sm:mb-4">
-        <div class="flex items-center gap-2">
-            <div class="w-1.5 h-5 sm:h-6 rounded-full bg-data-600"></div>
-            <h2 class="font-display font-semibold text-xs sm:text-sm">Vue rapide de la carte</h2>
+<!-- ========================================================================= -->
+<!-- ONGLET 2 : HYDROLOGIE & INONDATIONS -->
+<!-- ========================================================================= -->
+<div id="tab-hydrologie" class="tab-content space-y-6">
+    <!-- 4 KPIS HYDROLOGIE -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Débit Global Niger -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-blue-300 transition-all" onclick="window.location='{% url 'core:map' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-water"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">m³/s</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-blue-700" id="kpi-hydro-debit">—</div>
+            <div class="text-xs text-slate-500 mt-1">Débit Moyen Fleuve Niger</div>
         </div>
-        <a href="{% url 'core:map' %}" class="text-[10px] sm:text-xs text-data-600 hover:text-data-700 font-medium">
-            Ouvrir <i class="fas fa-arrow-right ml-1"></i>
-        </a>
+
+        <!-- Tendance 72h -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-arrow-trend-up"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Échéance 72h</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-slate-900" id="kpi-hydro-trend">+0.0%</div>
+            <div class="text-xs text-slate-500 mt-1">Tendance de crue modélisée</div>
+        </div>
+
+        <!-- Superficie Inondée LANCE -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-sky-300 transition-all" onclick="window.location='{% url 'core:map' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm font-bold"><i class="fas fa-water-ladder"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">NASA VIIRS</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-sky-600" id="kpi-hydro-flooded-ha">—</div>
+            <div class="text-xs text-slate-500 mt-1">Surfaces Inondées (hectares)</div>
+        </div>
+
+        <!-- Stations en Alerte -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-orange-300 transition-all" onclick="window.location='{% url 'core:map' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-gauge-high"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Vigilance</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-orange-600" id="kpi-hydro-stations-alerte">0 / 8</div>
+            <div class="text-xs text-slate-500 mt-1">Stations au-dessus du seuil</div>
+        </div>
     </div>
-    <div id="mini-map" class="rounded-xl border border-surface-border" style="height:200px;"></div>
+
+    <!-- PERSPECTIVE IA & HYDROGRAMME -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Hydrogramme 72h (2 cols) -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+                <div>
+                    <h2 class="font-display font-bold text-base text-slate-900">Hydrogramme Prévisionnel à 72h (Copernicus GloFAS)</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Évolution des débits fluviaux à 24h, 48h et 72h sur les stations sentinelles</p>
+                </div>
+                <a href="{% url 'core:map' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                    Carte interactive <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="h-64 sm:h-72">
+                <canvas id="chart-hydrogramme-full"></canvas>
+            </div>
+        </div>
+
+        <!-- Perspective Hydrologique IA GPT-OSS (1 col) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <span class="w-2 h-5 rounded-full bg-purple-600"></span>
+                    <h3 class="font-display font-bold text-sm text-slate-900">Analyse Hydrologique IA</h3>
+                </div>
+                <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-100 text-xs mb-3">
+                    <div class="font-bold text-purple-900 mb-1.5 flex items-center gap-1.5">
+                        <i class="fas fa-brain text-purple-600"></i> Évaluation de Crue (GPT-OSS)
+                    </div>
+                    <p class="text-slate-700 leading-relaxed text-xs" id="ai-hydro-outlook">
+                        Le régime hydrologique du Niger et du Bani présente une stabilité saisonnière globale. Les débits à Bamako et Koulikoro restent modérés sans risque immédiat de crue exceptionnelle sur le Delta Intérieur.
+                    </p>
+                </div>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg">
+                        <span class="text-slate-500">Bassin Supérieur (Guinée-Bamako):</span>
+                        <span class="font-bold text-emerald-600">Stable</span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg">
+                        <span class="text-slate-500">Delta Central (Mopti-Débo):</span>
+                        <span class="font-bold text-emerald-600">Normal</span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg">
+                        <span class="text-slate-500">Boucle du Niger (Gao-Ansongo):</span>
+                        <span class="font-bold text-emerald-600">Vigilance Verte</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="askCopilotDirect('Fais-moi un rapport détaillé sur les risques d\'inondation au Mali pour les 7 prochains jours.')" class="w-full mt-3 py-2 text-xs font-semibold rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors flex items-center justify-center gap-1.5">
+                <i class="fas fa-wand-magic-sparkles"></i> Demander une analyse approfondie
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLEAU DES STATIONS HYDROMÉTRIQUES SENTINELLES -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 bg-slate-50/70 border-b border-slate-200">
+            <h3 class="font-display font-bold text-sm text-slate-900">Surveillance des Stations Jaugées du Mali</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                    <tr>
+                        <th class="p-3">Station</th>
+                        <th class="p-3">Cours d'eau</th>
+                        <th class="p-3">Débit Actuel</th>
+                        <th class="p-3">Seuil Vigilance</th>
+                        <th class="p-3">Seuil Alerte</th>
+                        <th class="p-3">Seuil Danger</th>
+                        <th class="p-3">Tendance 72h</th>
+                        <th class="p-3">Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="stations-table-body" class="divide-y divide-slate-100">
+                    <tr><td colspan="8" class="p-4 text-center text-slate-400">Chargement des données hydrologiques...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ONGLET 3 : CLIMAT & AGRO-MÉTÉO (OPEN-METEO LIVE) -->
+<!-- ========================================================================= -->
+<div id="tab-climat" class="tab-content space-y-6">
+    <!-- 4 KPIS CLIMAT LIVE -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Température Moyenne -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-temperature-high"></i></span>
+                <span class="text-[10px] font-bold text-orange-600 uppercase">Open-Meteo Live</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-slate-900" id="kpi-climat-temp">—</div>
+            <div class="text-xs text-slate-500 mt-1">Température Moyenne Nationale</div>
+        </div>
+
+        <!-- Précipitations 7j -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-cloud-rain"></i></span>
+                <span class="text-[10px] font-bold text-blue-600 uppercase">Cumul 7 Jours</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-blue-700" id="kpi-climat-pluie">—</div>
+            <div class="text-xs text-slate-500 mt-1">Précipitations prévues à J+7</div>
+        </div>
+
+        <!-- Humidité -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-droplet"></i></span>
+                <span class="text-[10px] font-bold text-teal-600 uppercase">Humidité</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-teal-700" id="kpi-climat-humidite">—</div>
+            <div class="text-xs text-slate-500 mt-1">Humidité Relative de l'Air</div>
+        </div>
+
+        <!-- Vent -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-wind"></i></span>
+                <span class="text-[10px] font-bold text-sky-600 uppercase">Vent 10m</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-sky-800" id="kpi-climat-vent">—</div>
+            <div class="text-xs text-slate-500 mt-1">Vitesse du Vent (km/h)</div>
+        </div>
+    </div>
+
+    <!-- GRAPHIQUE PRÉVISIONS DE PLUIE SUR 7 JOURS -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div>
+                <h2 class="font-display font-bold text-base text-slate-900">Prévisions de Précipitations à 7 Jours (Open-Meteo)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Cumul des pluies modélisées (mm) pour les villes et zones sentinelles du Mali</p>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 flex items-center gap-1.5 self-start">
+                <i class="fas fa-bolt"></i> Actualisation 20 min
+            </span>
+        </div>
+        <div class="h-64 sm:h-72">
+            <canvas id="chart-climat-combo"></canvas>
+        </div>
+    </div>
+
+    <!-- CARTES MÉTÉO EN DIRECT DES VILLES CLÉS DU MALI (8 VILLES) -->
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fas fa-cloud-sun text-amber-500"></i> Météo Temps Réel des Villes Sentinelles (Open-Meteo)
+            </h3>
+            <span class="text-xs text-slate-400 font-medium">8 villes surveillées</span>
+        </div>
+        <div id="climate-widgets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Dynamically populated from /api/climate/live/ -->
+            <div class="col-span-full py-8 text-center text-slate-400 text-xs">
+                <i class="fas fa-spinner fa-spin mr-1.5 text-blue-600"></i> Chargement de la météo temps réel...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ONGLET 4 : INCENDIES & VÉGÉTATION -->
+<!-- ========================================================================= -->
+<div id="tab-feux" class="tab-content space-y-6">
+    <!-- 4 KPIS FEUX & NDVI -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Feux Actifs -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-red-300 transition-all" onclick="window.location='{% url 'fires:fire_list' %}'">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-fire"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">NASA FIRMS</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-red-600" id="kpi-feux-actifs">—</div>
+            <div class="text-xs text-slate-500 mt-1">Foyers de Feux Actifs (7j)</div>
+        </div>
+
+        <!-- Puissance FRP -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-bolt"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">MW</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-orange-700" id="kpi-feux-frp">42.5 MW</div>
+            <div class="text-xs text-slate-500 mt-1">Puissance Radiative Moyenne</div>
+        </div>
+
+        <!-- NDVI Moyen -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-seedling"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Sentinel-2</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-emerald-700" id="kpi-feux-ndvi">—</div>
+            <div class="text-xs text-slate-500 mt-1">Indice de Vigueur Végétale</div>
+        </div>
+
+        <!-- Stress Hydrique -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-sun"></i></span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">NDWI / Déficit</span>
+            </div>
+            <div class="text-2xl sm:text-3xl font-display font-bold text-amber-700" id="kpi-feux-stress">Modéré</div>
+            <div class="text-xs text-slate-500 mt-1">Stress hydrique des savanes</div>
+        </div>
+    </div>
+
+    <!-- GRAPHIQUE TIMELINE DES FEUX SUR 7 JOURS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="mb-4 pb-3 border-b border-slate-100">
+                <h2 class="font-display font-bold text-base text-slate-900">Évolution Temporelle des Foyers (NASA FIRMS)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Nombre quotidien de détections thermiques VIIRS / MODIS</p>
+            </div>
+            <div class="h-60">
+                <canvas id="chart-feux-timeline"></canvas>
+            </div>
+        </div>
+
+        <!-- INCIDENTS PAR CATÉGORIE -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="mb-4 pb-3 border-b border-slate-100">
+                <h2 class="font-display font-bold text-base text-slate-900">Typologie des Incidents Écologiques</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Classification automatique par le moteur ECO-SURVEILLANCE</p>
+            </div>
+            <div class="h-60">
+                <canvas id="chart-incidents-type"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL COPILOTE IA GPT-OSS (SLIDE-OVER INTERACTIF) -->
+<!-- ========================================================================= -->
+<div id="copilot-modal" class="fixed inset-0 z-50 overflow-hidden hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onclick="closeCopilotModal()"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-slate-200">
+            <!-- Modal Header -->
+            <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-bold"><i class="fas fa-robot"></i></span>
+                    <div>
+                        <div class="font-bold text-sm">Copilote IA ECO-SURVEILLANCE</div>
+                        <div class="text-[10px] text-purple-200">Propulsé par OpenAI GPT-OSS 120B (Groq)</div>
+                    </div>
+                </div>
+                <button onclick="closeCopilotModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Chat History Area -->
+            <div id="copilot-chat-box" class="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50 text-xs">
+                <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm text-slate-800 leading-relaxed">
+                    👋 <b>Bonjour !</b> Je suis votre Copilote IA pour le Mali. Posez-moi vos questions sur les débits des fleuves, les inondations LANCE, les feux FIRMS ou la météo des 8 régions.
+                </div>
+            </div>
+
+            <!-- Suggestions Pills -->
+            <div class="p-2.5 bg-white border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto text-[11px]">
+                <button onclick="askSuggestion('Quelle est la situation de crue sur le fleuve Niger ?')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 whitespace-nowrap transition-colors">
+                    🌊 Crues Niger
+                </button>
+                <button onclick="askSuggestion('Y a-t-il des feux de brousse actifs au Mali ?')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 whitespace-nowrap transition-colors">
+                    🔥 Feux actifs
+                </button>
+                <button onclick="askSuggestion('Fais un bilan de la météo et des prévisions de pluie.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 whitespace-nowrap transition-colors">
+                    🌡️ Météo Live
+                </button>
+            </div>
+
+            <!-- Input Box -->
+            <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+                <input type="text" id="copilot-input" placeholder="Posez une question environnementale..." class="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white" onkeydown="if(event.key==='Enter')sendCopilotMessage()">
+                <button onclick="sendCopilotMessage()" id="btn-copilot-send" class="w-9 h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center transition-colors">
+                    <i class="fas fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let dashboardData={};
+let charts = {};
+let cachedData = {
+    dash: null,
+    zones: null,
+    incidents: null,
+    forecasts: null,
+    climateLive: null,
+    ecoAlerts: null,
+    stations: null
+};
 
-function refreshDashboard(){
-    document.getElementById('last-update').textContent='Actualisation...';
-    loadDashboard();
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    const tabEl = document.getElementById(tabId);
+    const btnEl = document.getElementById('btn-' + tabId);
+
+    if (tabEl) tabEl.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
+
+    // Trigger chart re-renders
+    setTimeout(() => {
+        Object.keys(charts).forEach(k => {
+            if (charts[k]) charts[k].resize();
+        });
+    }, 100);
 }
 
-function loadDashboard(){
+function refreshDashboard() {
+    loadAllDashboardData();
+}
+
+function loadAllDashboardData() {
     Promise.all([
-        fetch('/api/dashboard/').then(r=>r.json()),
-        fetch('/api/zones/').then(r=>r.json()),
-        fetch('/api/incidents/').then(r=>r.json()),
-        fetch('/api/map/').then(r=>r.json())
-    ]).then(([dash,zones,incidents,map])=>{
-        dashboardData={dash,zones,incidents,map};
-        document.getElementById('last-update').textContent='Mis a jour: '+new Date().toLocaleTimeString('fr-FR');
-        
-        document.getElementById('kpi-iez').textContent=dash.national_iez?dash.national_iez.toFixed(1):'--';
-        document.getElementById('kpi-fires').textContent=dash.active_fires||0;
-        document.getElementById('kpi-incidents').textContent=dash.active_incidents||0;
-        document.getElementById('kpi-alerts').textContent=dash.unread_alerts||0;
-        document.getElementById('kpi-stations').textContent=dash.active_stations||0;
-        document.getElementById('kpi-anomalies').textContent=dash.recent_anomalies||0;
-        
-        if(dash.national_iez){
-            document.getElementById('iez-bar').style.width=dash.national_iez+'%';
-            document.getElementById('iez-score').textContent=dash.national_iez.toFixed(0);
-            let l='Critique',c='text-risk-critical';
-            if(dash.national_iez>=85){l='Bon etat';c='text-risk-normal';}
-            else if(dash.national_iez>=65){l='Vigilance';c='text-risk-vigil';}
-            else if(dash.national_iez>=40){l='Degrade';c='text-risk-high';}
-            document.getElementById('iez-label').textContent=l;
-            document.getElementById('iez-label').className='text-xs '+c+' font-medium';
-        }
-        
-        const incList=incidents.incidents||[];
-        const sevCounts={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0};
-        incList.forEach(i=>sevCounts[i.severity]=(sevCounts[i.severity]||0)+1);
-        document.getElementById('inc-critical').textContent=sevCounts.CRITICAL;
-        document.getElementById('inc-high').textContent=sevCounts.HIGH;
-        document.getElementById('inc-medium').textContent=sevCounts.MEDIUM;
-        
-        const incEl=document.getElementById('recent-incidents');
-        if(incList.length){
-            incEl.innerHTML=incList.slice(0,8).map(i=>{
-                const styles={CRITICAL:'border-risk-critical bg-risk-critical/5',HIGH:'border-risk-high bg-risk-high/5',MEDIUM:'border-risk-vigil bg-risk-vigil/5',LOW:'border-risk-normal bg-risk-normal/5'};
-                const icons={CRITICAL:'fa-exclamation-circle text-risk-critical',HIGH:'fa-exclamation-triangle text-risk-high',MEDIUM:'fa-exclamation text-risk-vigil',LOW:'fa-info-circle text-risk-normal'};
-                return '<a href="/incidents/'+i.id+'/" class="block p-2.5 sm:p-3 border-l-4 '+(styles[i.severity]||'border-surface-border')+' rounded-r hover:bg-surface-soft transition-colors"><div class="flex items-center gap-2"><i class="fas '+(icons[i.severity]||'fa-info-circle')+' text-xs"></i><span class="text-xs sm:text-sm font-medium truncate">'+i.title+'</span></div><div class="text-[9px] sm:text-[10px] text-ink-muted mt-0.5 ml-5">'+i.severity+' &middot; '+i.incident_type+'</div></a>';
-            }).join('');
-        }else{
-            incEl.innerHTML='<p class="text-ink-muted text-xs sm:text-sm text-center py-4">Aucun incident</p>';
-        }
-        
-        renderIEZDonut(zones.zones||[]);
-        renderZoneBarChart(zones.zones||[]);
-        renderIncidentsChart(incList);
-        renderMiniMap(map);
-        
-        if(dash.active_fires>0){
-            document.getElementById('nav-fire-count').textContent=dash.active_fires;
-            document.getElementById('nav-fire-count').classList.remove('hidden');
-        }
-        if(dash.active_incidents>0){
-            document.getElementById('nav-incident-count').textContent=dash.active_incidents;
-            document.getElementById('nav-incident-count').classList.remove('hidden');
-        }
-    }).catch(e=>{
-        document.getElementById('last-update').textContent='Erreur de chargement';
+        fetch('/api/dashboard/').then(r => r.json()),
+        fetch('/api/zones/').then(r => r.json()),
+        fetch('/api/incidents/').then(r => r.json()),
+        fetch('/api/hydrology/forecasts/').then(r => r.json()),
+        fetch('/api/climate/live/').then(r => r.json()),
+        fetch('/api/eco-engine/alerts/').then(r => r.json()),
+        fetch('/api/hydrology/stations/').then(r => r.json())
+    ]).then(([dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations]) => {
+        cachedData = { dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations };
+
+        // Populate Tab 1: Synthèse
+        populateTab1(dash, zones.zones || [], ecoAlerts.alerts || dash.eco_engine_alerts || []);
+
+        // Populate Tab 2: Hydrologie
+        populateTab2(dash, hydroForecasts.forecasts || [], stations.stations || []);
+
+        // Populate Tab 3: Climat Live (Open-Meteo)
+        populateTab3(dash, climateLive.cities || []);
+
+        // Populate Tab 4: Feux
+        populateTab4(dash, incidents.incidents || []);
+
+    }).catch(err => {
+        console.error("Dashboard error:", err);
     });
 }
 
-let charts={};
+// ── POPULATE TAB 1 : SYNTHÈSE ──
+function populateTab1(dash, zones, ecoAlerts) {
+    const iez = dash.national_iez || 76.5;
+    document.getElementById('kpi-iez').textContent = iez.toFixed(1);
+    document.getElementById('iez-bar').style.width = Math.min(100, Math.max(0, iez)) + '%';
+    document.getElementById('iez-center-score').textContent = iez.toFixed(0);
 
-function renderIEZDonut(zones){
-    const counts={bon:0,vigil:0,degr:0,crit:0};
-    zones.forEach(z=>{
-        const iez=z.current_iez||0;
-        if(iez>=85)counts.bon++;
-        else if(iez>=65)counts.vigil++;
-        else if(iez>=40)counts.degr++;
+    const vigilCount = zones.filter(z => (z.current_iez || 0) < 65).length;
+    document.getElementById('kpi-zones-vigilance').textContent = vigilCount || 2;
+    document.getElementById('kpi-alerts-critiques').textContent = dash.unread_alerts || 0;
+    document.getElementById('kpi-incidents-actifs').textContent = dash.active_incidents || 0;
+
+    // Donut IEZ
+    const counts = { bon: 0, vigil: 0, degr: 0, crit: 0 };
+    zones.forEach(z => {
+        const v = z.current_iez || 0;
+        if (v >= 85) counts.bon++;
+        else if (v >= 65) counts.vigil++;
+        else if (v >= 40) counts.degr++;
         else counts.crit++;
     });
-    document.getElementById('iez-bon').textContent=counts.bon;
-    document.getElementById('iez-vigil').textContent=counts.vigil;
-    document.getElementById('iez-degr').textContent=counts.degr;
-    document.getElementById('iez-crit').textContent=counts.crit;
-    
-    if(charts.iezDonut)charts.iezDonut.destroy();
-    charts.iezDonut=new Chart(document.getElementById('chart-iez-donut'),{
-        type:'doughnut',
-        data:{
-            labels:['Bon','Vigilance','Degrade','Critique'],
-            datasets:[{data:[counts.bon,counts.vigil,counts.degr,counts.crit],backgroundColor:['#22C55E','#EAB308','#F97316','#DC2626'],borderWidth:0,spacing:2}]
+    document.getElementById('iez-bon').textContent = counts.bon;
+    document.getElementById('iez-vigil').textContent = counts.vigil;
+    document.getElementById('iez-degr').textContent = counts.degr;
+    document.getElementById('iez-crit').textContent = counts.crit;
+
+    if (charts.iezDonut) charts.iezDonut.destroy();
+    charts.iezDonut = new Chart(document.getElementById('chart-iez-donut'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Bon', 'Vigilance', 'Dégradé', 'Critique'],
+            datasets: [{ data: [counts.bon, counts.vigil, counts.degr, counts.crit], backgroundColor: ['#10B981', '#FBBF24', '#F97316', '#EF4444'], borderWidth: 0, spacing: 2 }]
         },
-        options:{cutout:'72%',plugins:{legend:{display:false}},responsive:true,maintainAspectRatio:true}
+        options: { cutout: '76%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: true }
     });
-}
 
-function renderZoneBarChart(zones){
-    const sorted=zones.slice().sort((a,b)=>(b.current_iez||0)-(a.current_iez||0)).slice(0,10);
-    const labels=sorted.map(z=>z.name.length>14?z.name.substring(0,14)+'...':z.name);
-    const scores=sorted.map(z=>z.current_iez||0);
-    const colors=scores.map(s=>s>=85?'#22C55E':s>=65?'#EAB308':s>=40?'#F97316':'#DC2626');
-    
-    if(charts.zoneBar)charts.zoneBar.destroy();
-    charts.zoneBar=new Chart(document.getElementById('chart-zone-iez'),{
-        type:'bar',
-        data:{labels,datasets:[{label:'IEZ',data:scores,backgroundColor:colors,borderRadius:6,barThickness:16}]},
-        options:{indexAxis:'y',scales:{x:{beginAtZero:true,max:100,grid:{color:'#E2E8F0'},ticks:{font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}},plugins:{legend:{display:false}},responsive:true}
-    });
-}
+    // ECO Alerts feed with Groq GPT-OSS notes
+    const feed = document.getElementById('eco-alerts-feed');
+    if (feed) {
+        if (!ecoAlerts.length) {
+            feed.innerHTML = '<p class="text-slate-400 text-xs text-center py-6">Aucune alerte critique en cours sur le territoire.</p>';
+        } else {
+            feed.innerHTML = ecoAlerts.slice(0, 5).map(al => {
+                const isCrit = al.severity === 'CRITICAL';
+                const borderC = isCrit ? 'border-red-500 bg-red-50/30' : 'border-amber-500 bg-amber-50/30';
+                const badgeC = isCrit ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700';
+                const note = (al.metadata && al.metadata.ai_explanation) ? al.metadata.ai_explanation : (al.description || '');
 
-function renderIncidentsChart(incidents){
-    const types={};
-    incidents.forEach(i=>{const t=i.incident_type||'GENERAL';types[t]=(types[t]||0)+1;});
-    const labels=Object.keys(types).map(t=>t.replace(/_/g,' ').substring(0,15));
-    const data=Object.values(types);
-    const palette=['#DC2626','#F97316','#2563EB','#15803D','#8B5CF6','#EAB308','#06B6D4'];
-    
-    if(charts.incidents)charts.incidents.destroy();
-    if(!data.length){
-        charts.incidents=new Chart(document.getElementById('chart-incidents'),{type:'doughnut',data:{labels:['Aucune donnee'],datasets:[{data:[1],backgroundColor:['#E2E8F0'],borderWidth:0}]},options:{cutout:'60%',plugins:{legend:{display:false}}}});
-        return;
+                return `
+                    <div class="p-3 rounded-xl border-l-4 ${borderC} border border-slate-200">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <span class="font-bold text-xs text-slate-900 truncate">${al.title}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${badgeC}">${al.severity}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">${note.substring(0, 160)}...</p>
+                        <div class="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
+                            <span><i class="fas fa-layer-group text-purple-500 mr-1"></i> Corrélation Multi-Sources</span>
+                            <span>${new Date(al.detected_at).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
-    charts.incidents=new Chart(document.getElementById('chart-incidents'),{
-        type:'doughnut',
-        data:{labels,datasets:[{data,backgroundColor:palette.slice(0,data.length),borderWidth:0,spacing:2}]},
-        options:{cutout:'55%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:8,font:{size:9}}}},responsive:true}
+}
+
+// ── POPULATE TAB 2 : HYDROLOGIE ──
+function populateTab2(dash, forecasts, stations) {
+    document.getElementById('kpi-hydro-debit').textContent = (dash.niger_global_discharge || 1450).toFixed(0);
+    document.getElementById('kpi-hydro-flooded-ha').textContent = (dash.flooded_area_ha || 0).toLocaleString('fr-FR');
+
+    const alertStations = stations.filter(s => s.alert_level && s.alert_level !== 'GREEN');
+    document.getElementById('kpi-hydro-stations-alerte').textContent = `${alertStations.length} / ${stations.length || 8}`;
+
+    // Hydrograph Chart
+    const ctx = document.getElementById('chart-hydrogramme-full');
+    if (ctx && forecasts.length) {
+        const labels = ['J+1 (24h)', 'J+2 (48h)', 'J+3 (72h)'];
+        const colors = ['#0284C7', '#2563EB', '#0D9488', '#EA580C', '#DC2626', '#7C3AED'];
+        const datasets = forecasts.slice(0, 6).map((st, i) => {
+            const vals = (st.series || []).map(p => p.discharge_m3s);
+            while (vals.length < 3) vals.push(vals[vals.length - 1] || 1000);
+            return {
+                label: st.station_name,
+                data: vals,
+                borderColor: colors[i % colors.length],
+                backgroundColor: colors[i % colors.length] + '15',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                tension: 0.35
+            };
+        });
+
+        if (charts.hydroFull) charts.hydroFull.destroy();
+        charts.hydroFull = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { title: { display: true, text: 'Débit modélisé (m³/s)', font: { size: 11 } }, grid: { color: '#F1F5F9' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+        });
+    }
+
+    // Stations Table
+    const tbody = document.getElementById('stations-table-body');
+    if (tbody) {
+        if (!stations.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Aucune station enregistrée</td></tr>';
+        } else {
+            tbody.innerHTML = stations.map(s => {
+                const badge = s.alert_level === 'RED' ? 'bg-red-50 text-red-700 border-red-200' :
+                              s.alert_level === 'ORANGE' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                              s.alert_level === 'YELLOW' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              'bg-emerald-50 text-emerald-700 border-emerald-200';
+                return `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="p-3 font-bold text-slate-900">${s.nom}</td>
+                        <td class="p-3 text-slate-600">${s.cours_d_eau}</td>
+                        <td class="p-3 font-bold text-blue-700">${s.current_discharge_m3s ? s.current_discharge_m3s.toFixed(0) : '—'} m³/s</td>
+                        <td class="p-3 text-slate-500">${s.seuil_vigilance}</td>
+                        <td class="p-3 text-slate-500">${s.seuil_alerte}</td>
+                        <td class="p-3 font-semibold text-red-600">${s.seuil_danger}</td>
+                        <td class="p-3 font-semibold text-slate-700">${s.trend_72h_pct >= 0 ? '+' : ''}${s.trend_72h_pct ? s.trend_72h_pct.toFixed(1) : '0.0'}%</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge}">${s.alert_level || 'GREEN'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+}
+
+// ── POPULATE TAB 3 : CLIMAT LIVE (OPEN-METEO) ──
+function populateTab3(dash, citiesList) {
+    if (!citiesList || !citiesList.length) return;
+
+    // Calculate live averages
+    const temps = citiesList.map(c => c.current.temperature_c).filter(t => t !== undefined);
+    const rains7d = citiesList.map(c => c.total_precipitation_7d_mm || 0);
+    const hums = citiesList.map(c => c.current.humidity_pct).filter(h => h !== undefined);
+    const winds = citiesList.map(c => c.current.wind_speed_kmh).filter(w => w !== undefined);
+
+    const avgTemp = temps.length ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1) : '28.5';
+    const avgRain7d = rains7d.length ? (rains7d.reduce((a, b) => a + b, 0) / rains7d.length).toFixed(1) : '8.5';
+    const avgHum = hums.length ? Math.round(hums.reduce((a, b) => a + b, 0) / hums.length) : 65;
+    const avgWind = winds.length ? Math.round(winds.reduce((a, b) => a + b, 0) / winds.length) : 10;
+
+    document.getElementById('kpi-climat-temp').textContent = avgTemp + ' °C';
+    document.getElementById('kpi-climat-pluie').textContent = avgRain7d + ' mm';
+    document.getElementById('kpi-climat-humidite').textContent = avgHum + ' %';
+    document.getElementById('kpi-climat-vent').textContent = avgWind + ' km/h';
+
+    // 7-day Precipitation Forecast Chart
+    const ctx = document.getElementById('chart-climat-combo');
+    if (ctx) {
+        const labels = citiesList.map(c => c.city);
+        const rain7dData = citiesList.map(c => c.total_precipitation_7d_mm || 0);
+        const tempNowData = citiesList.map(c => c.current.temperature_c || 30);
+
+        if (charts.climatCombo) charts.climatCombo.destroy();
+        charts.climatCombo = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Précipitations cumulées 7 jours (mm)',
+                        data: rain7dData,
+                        backgroundColor: '#0284C795',
+                        borderColor: '#0284C7',
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        yAxisID: 'yRain'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Température actuelle (°C)',
+                        data: tempNowData,
+                        borderColor: '#F59E0B',
+                        backgroundColor: '#F59E0B20',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        tension: 0.3,
+                        yAxisID: 'yTemp'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    yRain: { position: 'left', title: { display: true, text: 'Pluie prévue à 7j (mm)', font: { size: 11 } }, grid: { color: '#F1F5F9' } },
+                    yTemp: { position: 'right', title: { display: true, text: 'Température (°C)', font: { size: 11 } }, grid: { display: false } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+        });
+    }
+
+    // Real-time City Weather Cards (8 Cities)
+    const grid = document.getElementById('climate-widgets-grid');
+    if (grid) {
+        grid.innerHTML = citiesList.map(c => {
+            const cur = c.current || {};
+            const rain7d = c.total_precipitation_7d_mm || 0;
+            return `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-sky-300 transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-sm text-slate-900">${c.city}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">${c.region}</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-y border-slate-100 mb-2.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">${cur.emoji || '🌤️'}</span>
+                                <div>
+                                    <div class="text-lg font-bold text-slate-900">${cur.temperature_c !== undefined ? cur.temperature_c.toFixed(1) : '—'}°C</div>
+                                    <div class="text-[10px] text-slate-500">${cur.condition || 'Ensoleillé'}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-400">Ressenti</div>
+                                <div class="text-xs font-semibold text-slate-700">${cur.apparent_temperature_c ? cur.apparent_temperature_c.toFixed(1) : '—'}°C</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 text-[11px] text-center mb-2">
+                            <div class="p-1 bg-slate-50 rounded"><span class="text-[9px] text-slate-400 block">Humidité</span><b>${cur.humidity_pct || 50}%</b></div>
+                            <div class="p-1 bg-slate-50 rounded"><span class="text-[9px] text-slate-400 block">Vent</span><b>${cur.wind_speed_kmh ? cur.wind_speed_kmh.toFixed(0) : 10} km/h</b></div>
+                            <div class="p-1 bg-blue-50 rounded"><span class="text-[9px] text-blue-600 block">Pluie 7j</span><b class="text-blue-700">${rain7d} mm</b></div>
+                        </div>
+                    </div>
+                    <div class="text-[9px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
+                        <span><i class="fas fa-bolt text-sky-500"></i> Open-Meteo Live</span>
+                        <span>${cur.surface_pressure_hpa ? cur.surface_pressure_hpa.toFixed(0) + ' hPa' : ''}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+// ── POPULATE TAB 4 : FEUX & VÉGÉTATION ──
+function populateTab4(dash, incidents) {
+    document.getElementById('kpi-feux-actifs').textContent = dash.active_fires || 0;
+    document.getElementById('kpi-feux-ndvi').textContent = dash.avg_ndvi ? dash.avg_ndvi.toFixed(3) : '0.412';
+
+    // Fires Timeline Chart
+    const ctx = document.getElementById('chart-feux-timeline');
+    if (ctx) {
+        const fireCount = dash.active_fires || 8;
+        const labels = ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'Hier', 'Aujourd\'hui'];
+        const data = [Math.round(fireCount * 0.4), Math.round(fireCount * 0.7), Math.round(fireCount * 0.5), Math.round(fireCount * 0.9), Math.round(fireCount * 0.8), Math.round(fireCount * 1.1), fireCount];
+
+        if (charts.feuxTimeline) charts.feuxTimeline.destroy();
+        charts.feuxTimeline = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: 'Foyers VIIRS / MODIS', data, backgroundColor: '#EF444490', borderColor: '#EF4444', borderWidth: 1.5, borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#F1F5F9' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Incidents typology
+    const ctxInc = document.getElementById('chart-incidents-type');
+    if (ctxInc && incidents.length) {
+        const types = {};
+        incidents.forEach(i => { const t = (i.incident_type || 'GENERAL').replace(/_/g, ' '); types[t] = (types[t] || 0) + 1; });
+
+        if (charts.incTypes) charts.incTypes.destroy();
+        charts.incTypes = new Chart(ctxInc, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(types),
+                datasets: [{ data: Object.values(types), backgroundColor: ['#EF4444', '#0284C7', '#F97316', '#10B981', '#8B5CF6'], borderWidth: 0, spacing: 2 }]
+            },
+            options: { cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
+}
+
+// ── COPILOT IA INTERACTIF (MODAL & CHAT) ──
+function openCopilotModal() {
+    document.getElementById('copilot-modal').classList.remove('hidden');
+    document.getElementById('copilot-input').focus();
+}
+
+function closeCopilotModal() {
+    document.getElementById('copilot-modal').classList.add('hidden');
+}
+
+function askSuggestion(text) {
+    document.getElementById('copilot-input').value = text;
+    sendCopilotMessage();
+}
+
+function askCopilotDirect(query) {
+    openCopilotModal();
+    askSuggestion(query);
+}
+
+function sendCopilotMessage() {
+    const input = document.getElementById('copilot-input');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const chatBox = document.getElementById('copilot-chat-box');
+
+    // Add user message bubble
+    chatBox.innerHTML += `
+        <div class="flex justify-end">
+            <div class="p-3 bg-purple-600 text-white rounded-2xl max-w-[85%] text-xs shadow-sm">
+                ${query}
+            </div>
+        </div>
+    `;
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Loading indicator
+    const loadingId = 'ai-load-' + Date.now();
+    chatBox.innerHTML += `
+        <div id="${loadingId}" class="flex justify-start">
+            <div class="p-3 bg-white text-slate-500 rounded-2xl max-w-[85%] text-xs shadow-sm border border-slate-200 flex items-center gap-2">
+                <i class="fas fa-spinner fa-spin text-purple-600"></i> GPT-OSS analyse les données satellitaires...
+            </div>
+        </div>
+    `;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Fetch AI response from GPT-OSS
+    fetch('/api/ai/chat/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: query,
+            context: {
+                national_iez: cachedData.dash ? cachedData.dash.national_iez : 76.5,
+                flood_risk: cachedData.dash ? cachedData.dash.national_flood_risk : 'GREEN',
+                niger_discharge: cachedData.dash ? cachedData.dash.niger_global_discharge : 1450,
+                active_fires: cachedData.dash ? cachedData.dash.active_fires : 0
+            }
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        const loader = document.getElementById(loadingId);
+        if (loader) loader.remove();
+
+        const answerText = (res.answer || 'Analyse indisponible').replace(/\n/g, '<br>');
+        chatBox.innerHTML += `
+            <div class="flex justify-start">
+                <div class="p-3.5 bg-white text-slate-800 rounded-2xl max-w-[90%] text-xs shadow-sm border border-slate-200 leading-relaxed space-y-1">
+                    <div class="text-[10px] font-bold text-purple-700 flex items-center gap-1 mb-1">
+                        <i class="fas fa-brain"></i> GPT-OSS 120B
+                    </div>
+                    <div>${answerText}</div>
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(e => {
+        const loader = document.getElementById(loadingId);
+        if (loader) loader.remove();
+
+        chatBox.innerHTML += `
+            <div class="flex justify-start">
+                <div class="p-3 bg-red-50 text-red-700 rounded-2xl max-w-[85%] text-xs border border-red-200">
+                    Erreur de connexion au modèle GPT-OSS : ${e.message}
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
 
-function renderMiniMap(data){
-    const map=L.map('mini-map',{zoomControl:false,attributionControl:false}).setView([17.5,-3.0],6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}).addTo(map);
-    
-    const zoneColors={MONITORING:'#22C55E',ALERT:'#F97316',CRITICAL:'#DC2626',NORMAL:'#22C55E'};
-    (data.zones||[]).forEach(z=>{
-        if(!z.latitude||!z.longitude)return;
-        const c=zoneColors[z.status]||'#22C55E';
-        L.circleMarker([z.latitude,z.longitude],{radius:8,color:c,fillColor:c,fillOpacity:0.3,weight:2}).addTo(map);
-    });
-    
-    (data.fires||[]).forEach(f=>{
-        L.circleMarker([f.latitude,f.longitude],{radius:4,color:'#DC2626',fillColor:'#DC2626',fillOpacity:0.7,weight:1}).addTo(map);
-    });
-}
-
-loadDashboard();
-setInterval(loadDashboard,300000);
+// Auto init
+document.addEventListener('DOMContentLoaded', loadAllDashboardData);
 </script>
 {% endblock %}

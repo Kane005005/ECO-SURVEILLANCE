@@ -15,7 +15,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--source',
             type=str,
-            choices=['firms', 'power', 'sentinel2', 'sentinel5p', 'all'],
+            choices=['firms', 'power', 'sentinel2', 'sentinel5p', 'glofas', 'lance_flood', 'eco_engine', 'all'],
             default='all',
             help='Source to sync (default: all)'
         )
@@ -90,6 +90,33 @@ class Command(BaseCommand):
                     results['sentinel5p'] = {'task_id': result.id, 'status': 'queued'}
                 else:
                     results['sentinel5p'] = self._sync_sentinel5p(zone_ids, days)
+
+            if source in ['glofas', 'all']:
+                self.stdout.write('\n--- Syncing Copernicus GloFAS hydrology forecasts ---')
+                if use_async:
+                    from apps.water.tasks import sync_glofas_hydrology
+                    result = sync_glofas_hydrology.delay()
+                    results['glofas'] = {'task_id': result.id, 'status': 'queued'}
+                else:
+                    results['glofas'] = self._sync_glofas()
+
+            if source in ['lance_flood', 'all']:
+                self.stdout.write('\n--- Syncing NASA LANCE Flood VIIRS NRT3 observations ---')
+                if use_async:
+                    from apps.water.tasks import sync_lance_flood
+                    result = sync_lance_flood.delay()
+                    results['lance_flood'] = {'task_id': result.id, 'status': 'queued'}
+                else:
+                    results['lance_flood'] = self._sync_lance_flood()
+
+            if source in ['eco_engine', 'all']:
+                self.stdout.write('\n--- Running ECO Engine Multi-Source Cross-Correlations ---')
+                if use_async:
+                    from apps.alerts.tasks import run_eco_engine
+                    result = run_eco_engine.delay()
+                    results['eco_engine'] = {'task_id': result.id, 'status': 'queued'}
+                else:
+                    results['eco_engine'] = self._run_eco_engine()
 
         except Exception as e:
             raise CommandError(f'Sync failed: {e}')
@@ -264,3 +291,58 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f'  Failed Sentinel-5P for {zone.name}: {e}'))
 
         return {"synced_zones": zones_synced, "total_observations": total_saved, "status": "success"}
+
+    def _sync_glofas(self):
+        """Sync Copernicus GloFAS hydrology forecasts."""
+        from data_providers.glofas import GloFASProvider
+
+        provider = GloFASProvider(
+            cds_url=getattr(settings, "CDS_API_URL", "https://ewds.climate.copernicus.eu/api"),
+            cds_key=getattr(settings, "CDS_API_KEY", ""),
+        )
+        health = provider.health_check()
+        if health.status != "ok":
+            return {"status": "skipped", "reason": health.reason}
+
+        try:
+            items = provider.fetch()
+            saved = provider.save(provider.normalize(items))
+            provider.close()
+            self.stdout.write(f'  Synced {saved} GloFAS river forecasts')
+            return {"status": "ok", "total_observations": saved}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    def _sync_lance_flood(self):
+        """Sync NASA LANCE Flood VIIRS observations."""
+        from data_providers.lance_flood import LANCEFloodProvider
+
+        provider = LANCEFloodProvider(
+            earthdata_token=getattr(settings, "EARTHDATA_TOKEN", ""),
+            base_url=getattr(settings, "LANCE_FLOOD_BASE_URL", ""),
+        )
+        health = provider.health_check()
+        if health.status != "ok":
+            return {"status": "skipped", "reason": health.reason}
+
+        try:
+            items = provider.fetch()
+            saved = provider.save(provider.normalize(items))
+            provider.close()
+            self.stdout.write(f'  Synced {saved} LANCE flood observations')
+            return {"status": "ok", "total_observations": saved}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    def _run_eco_engine(self):
+        """Run ECO Engine central multi-source cross-correlations."""
+        from core.services.eco_engine import ECOEngine
+
+        engine = ECOEngine()
+        try:
+            alerts = engine.run_all_correlations()
+            self.stdout.write(f'  ECO Engine generated {len(alerts)} correlated alerts')
+            return {"status": "ok", "total_observations": len(alerts)}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+

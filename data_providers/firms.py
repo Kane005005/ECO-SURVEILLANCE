@@ -36,9 +36,16 @@ class FIRMSProvider(BaseDataProvider):
         Uses FIRMS v2 area API: area/csv/{key}/{source}/{west,south,east,north}/{days}"""
         # Default bbox covers all of Mali + buffer
         if not bbox:
-            bbox = {"min_lon": -12, "min_lat": 10, "max_lon": 4, "max_lat": 25}
+            bbox = {"min_lon": -12.5, "min_lat": 10.0, "max_lon": 4.5, "max_lat": 25.0}
 
-        endpoint = f"{self.BASE_URL}/csv/{self.map_key}/{self.source}/{bbox['min_lon']},{bbox['min_lat']},{bbox['max_lon']},{bbox['max_lat']}/{days}"
+        source_name = self.source
+        if source_name == "VIIRS":
+            source_name = "VIIRS_SNPP_NRT"
+        elif source_name == "MODIS":
+            source_name = "MODIS_NRT"
+
+        days_clamped = max(1, min(int(days), 10))
+        endpoint = f"{self.BASE_URL}/csv/{self.map_key}/{source_name}/{bbox['min_lon']},{bbox['min_lat']},{bbox['max_lon']},{bbox['max_lat']}/{days_clamped}"
         try:
             response = self.session.get(endpoint, timeout=30)
             response.raise_for_status()

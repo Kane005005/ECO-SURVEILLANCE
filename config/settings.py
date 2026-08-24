@@ -176,6 +176,20 @@ CDSE_CLIENT_SECRET = config("CDSE_CLIENT_SECRET", default="")
 COPERNICUS_CLIENT_ID = config("COPERNICUS_CLIENT_ID", default=CDSE_CLIENT_ID)
 COPERNICUS_CLIENT_SECRET = config("COPERNICUS_CLIENT_SECRET", default=CDSE_CLIENT_SECRET)
 
+# Copernicus EWDS / GloFAS Hydrology
+CDS_API_URL = config("CDS_API_URL", default="https://ewds.climate.copernicus.eu/api")
+CDS_API_KEY = config("CDS_API_KEY", default="")
+
+# NASA Earthdata / LANCE Flood NRT3
+EARTHDATA_TOKEN = config("EARTHDATA_TOKEN", default="")
+LANCE_FLOOD_BASE_URL = config(
+    "LANCE_FLOOD_BASE_URL",
+    default="https://nrt3.modaps.eosdis.nasa.gov/archive/allData/5200/VCDWD_L3_F2_NRT/Recent",
+)
+
+# Google Flood Hub (préparatoire)
+FLOOD_HUB_API_KEY = config("FLOOD_HUB_API_KEY", default="")
+
 # ERA5 (out of MVP)
 ERA5_CDS_URL = config("ERA5_CDS_URL", default="https://cds.climate.copernicus.eu/api/v2")
 ERA5_CDS_KEY = config("ERA5_CDS_KEY", default="")
@@ -190,7 +204,7 @@ GEE_PROJECT = config("GEE_PROJECT", default="")
 # ── AI ────────────────────────────────────────────────────
 AI_PROVIDER = config("AI_PROVIDER", default="openai_compat")
 GROQ_API_KEY = config("GROQ_API_KEY", default="")
-GROQ_MODEL = config("GROQ_MODEL", default="llama-3.3-70b-versatile")
+GROQ_MODEL = config("GROQ_MODEL", default="openai/gpt-oss-120b")
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 OPENAI_MODEL = config("OPENAI_MODEL", default="gpt-4o-mini")
 OPENAI_BASE_URL = config("OPENAI_BASE_URL", default="https://api.openai.com/v1")

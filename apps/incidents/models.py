@@ -4,6 +4,7 @@ class Incident(models.Model):
     TYPE_CHOICES = [
         ("WILDFIRE", "Feu de forêt"),
         ("DROUGHT", "Sécheresse"),
+        ("FLOOD", "Inondation / Crue"),
         ("VEGETATION_DEGRADATION", "Dégradation végétale"),
         ("WATER_POLLUTION", "Pollution eau"),
         ("WATER_STRESS", "Stress hydrique"),

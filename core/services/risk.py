@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from datetime import timedelta
 from django.utils import timezone
+from django.db.models import Q
 
 logger = logging.getLogger("apps.risk")
 
@@ -121,6 +122,14 @@ class RiskEngine:
                 "so2_level": {"weight": 0.25, "description": "SO2 élevé"},
                 "o3_level": {"weight": 0.25, "description": "O3 anormal"},
                 "no2_level": {"weight": 0.20, "description": "NO2 élevé"},
+            },
+        },
+        "FLOOD": {
+            "factors": {
+                "glofas_discharge": {"weight": 0.35, "description": "Débit fluvial GloFAS / seuils"},
+                "lance_flooded_area": {"weight": 0.35, "description": "Surfaces inondées NASA LANCE"},
+                "recent_precipitation": {"weight": 0.20, "description": "Précipitations récentes intenses"},
+                "soil_saturation": {"weight": 0.10, "description": "Saturation des sols"},
             },
         },
     }
@@ -299,6 +308,70 @@ class RiskEngine:
             signals["water_level"] = min(max((3 - avg) * 50, 0), 100)
 
         return self.compute("DROUGHT", signals)
+
+    def compute_flood_risk(self, zone) -> RiskResult:
+        """Compute flood risk for a zone using GloFAS, LANCE Flood, and Climate signals."""
+        from apps.water.models import RiverForecast, FloodObservation, HydrologicalStation
+        from apps.climate.models import ClimateObservation
+
+        now = timezone.now()
+        signals = {}
+
+        # 1. GloFAS River discharge & forecast
+        # Look for station in or closest to zone
+        station = HydrologicalStation.objects.filter(
+            Q(zone=zone) | Q(nom__icontains=zone.name.split()[0])
+        ).first()
+        if not station:
+            station = HydrologicalStation.objects.filter(is_active=True).first()
+
+        glofas_score = 10.0
+        if station:
+            recent_forecast = RiverForecast.objects.filter(
+                station=station,
+                date_run__gte=(now - timedelta(days=3)).date()
+            ).order_by("-date_run", "leadtime_hours").first()
+
+            if recent_forecast:
+                q = recent_forecast.discharge_m3s
+                if q >= station.seuil_danger:
+                    glofas_score = 95.0
+                elif q >= station.seuil_alerte:
+                    glofas_score = 75.0 + min((recent_forecast.trend_72h_pct / 50.0) * 15.0, 20.0)
+                elif q >= station.seuil_vigilance:
+                    glofas_score = 50.0 + min((recent_forecast.trend_72h_pct / 50.0) * 15.0, 20.0)
+                else:
+                    glofas_score = max(10.0, (q / max(station.seuil_vigilance, 1.0)) * 40.0)
+        signals["glofas_discharge"] = min(max(glofas_score, 0), 100)
+
+        # 2. LANCE Flood observed flooded area
+        recent_floods = FloodObservation.objects.filter(
+            Q(zone=zone) | Q(zone__isnull=True),
+            observation_date__gte=(now - timedelta(days=5)).date()
+        ).values_list("flooded_area_km2", flat=True)
+        max_flooded_km2 = max(recent_floods) if recent_floods else 0.0
+        # 5 km2 -> 40, 50 km2 -> 80, >100 km2 -> 100
+        lance_score = min((max_flooded_km2 / 100.0) * 100.0, 100.0) if max_flooded_km2 > 0 else 10.0
+        signals["lance_flooded_area"] = lance_score
+
+        # 3. Recent intense precipitation (last 3 days)
+        precip_3d = list(ClimateObservation.objects.filter(
+            zone=zone, variable="PRECIPITATION",
+            observed_at__gte=now - timedelta(days=3)
+        ).values_list("value", flat=True))
+        total_precip_3d = sum(precip_3d) if precip_3d else 0.0
+        # > 50mm in 3d -> high flood risk
+        signals["recent_precipitation"] = min(max((total_precip_3d / 60.0) * 100.0, 0), 100)
+
+        # 4. Soil saturation proxy (14-day cumulative precipitation + humidity)
+        precip_14d = list(ClimateObservation.objects.filter(
+            zone=zone, variable="PRECIPITATION",
+            observed_at__gte=now - timedelta(days=14)
+        ).values_list("value", flat=True))
+        total_14d = sum(precip_14d) if precip_14d else 0.0
+        signals["soil_saturation"] = min(max((total_14d / 150.0) * 100.0, 0), 100)
+
+        return self.compute("FLOOD", signals)
 
     def compute_all_risks(self, zone) -> List[RiskResult]:
         """Compute all risk types for a zone."""
