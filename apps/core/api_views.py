@@ -365,6 +365,14 @@ def map_api(request):
         "id", "title", "severity", "incident_type", "description", "detected_at", "latitude", "longitude", "metadata"
     ))
 
+    # Field Reports (Crowdsourcing / Remontées terrain)
+    from apps.reports.models import FieldReport
+    field_reports = [
+        r.to_geojson_feature() for r in FieldReport.objects.filter(
+            created_at__gte=month_ago
+        ).order_by("-created_at")[:100]
+    ]
+
     return JsonResponse({
         "zones": zones,
         "fires": fires,
@@ -378,7 +386,9 @@ def map_api(request):
         "floods": floods,
         "climate_summary": climate_summary,
         "eco_alerts": eco_alerts,
+        "reports": field_reports,
     })
+
 
 
 def zones_api(request):

@@ -1,6 +1,6 @@
 /**
  * ECO-SURVEILLANCE MALI — Interactive Map Engine (Light & Hydro-focused with GPT-OSS AI & Open-Meteo)
- * Default: CartoDB Positron Light, Hydrographic network, GloFAS Sentinel Stations.
+ * Default: CartoDB Positron Light, Hydrographic network, GloFAS Sentinel Stations, Field Reports.
  * Secondary layers accessible on-demand.
  */
 
@@ -20,7 +20,8 @@ let allData = {
     hydrology: [],
     floods: [],
     climate_summary: [],
-    eco_alerts: []
+    eco_alerts: [],
+    reports: []
 };
 
 let grps = {
@@ -36,13 +37,15 @@ let grps = {
     ndvi: null,
     no2: null,
     risks: null,
-    heatmap: null
+    heatmap: null,
+    reports: null
 };
 
-// Initial state: Only Hydrography & Hydrological Stations are active
+// Initial state: Hydrography, Stations, and Field Reports are active
 let vis = {
     maliHydro: true,
     hydrology: true,
+    reports: true,
     floods: false,
     climate: false,
     fires: false,
@@ -68,8 +71,14 @@ function initMap() {
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Click on map closes open popups cleanly on desktop
-    map.on('click', function () {
+    // Map click: either handle report placement mode or close popups
+    map.on('click', function (e) {
+        if (typeof isReportingMode !== 'undefined' && isReportingMode) {
+            if (typeof openReportModal === 'function') {
+                openReportModal(e.latlng.lat, e.latlng.lng);
+            }
+            return;
+        }
         map.closePopup();
     });
 
@@ -244,6 +253,31 @@ function hydroStationIcon(alertLevel, discharge) {
     });
 }
 
+function reportIcon(type, severity) {
+    const sevColors = {
+        CRITICAL: '#EF4444',
+        HIGH: '#F97316',
+        MEDIUM: '#EAB308',
+        LOW: '#10B981'
+    };
+    const typeIcons = {
+        FLOOD: 'fa-water',
+        WILDFIRE: 'fa-fire',
+        DROUGHT: 'fa-sun',
+        WATER_QUALITY: 'fa-flask',
+        OTHER: 'fa-bullhorn'
+    };
+    const c = sevColors[severity] || '#F97316';
+    const icon = typeIcons[type] || 'fa-bullhorn';
+    return L.divIcon({
+        html: `<div style="width:26px;height:26px;background:${c};border-radius:50%;border:2.5px solid #FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.25);color:white;font-size:11px;transition:transform .2s ease;">
+                 <i class="fas ${icon}"></i>
+               </div>`,
+        iconSize: [26, 26],
+        className: ''
+    });
+}
+
 function climateIcon() {
     return L.divIcon({
         html: `<div style="width:20px;height:20px;background:#0284C7;border-radius:50%;border:2px solid #FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(2,132,199,0.45);">
@@ -320,7 +354,7 @@ function cz_vars(cz) {
     };
 }
 
-// ── POPUPS BLANCS ÉPURÉS AVEC IA & OPEN-METEO ──
+// ── POPUPS BLANCS ÉPURÉS AVEC IA, OPEN-METEO & SIGNALEMENTS ──
 function hydroStationPopup(s) {
     const alertColors = { GREEN: '#16A34A', YELLOW: '#CA8A04', ORANGE: '#EA580C', RED: '#DC2626' };
     const c = alertColors[s.alert_level] || '#16A34A';
@@ -398,6 +432,47 @@ function hydroStationPopup(s) {
             <div class="text-[9px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
                 <span><i class="fas fa-satellite"></i> Copernicus CEMS-GloFAS</span>
                 <span class="font-medium text-blue-600">ID: ${s.id}</span>
+            </div>
+        </div>
+    `;
+}
+
+function fieldReportPopup(p) {
+    const sevColors = {
+        CRITICAL: 'bg-red-50 text-red-700 border-red-200',
+        HIGH: 'bg-orange-50 text-orange-700 border-orange-200',
+        MEDIUM: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        LOW: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    };
+    const badge = sevColors[p.severity] || sevColors.MEDIUM;
+    const verifiedBadge = p.is_verified 
+        ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800"><i class="fas fa-check-circle mr-1"></i>Vérifié</span>`
+        : `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200"><i class="fas fa-hourglass-half mr-1"></i>Remontée terrain</span>`;
+
+    return `
+        <div class="p-3.5 bg-white font-sans text-slate-900 min-w-[260px] max-w-[320px]">
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 mb-2">
+                <div class="flex items-center gap-2 truncate">
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs flex-shrink-0"><i class="fas fa-bullhorn"></i></span>
+                    <div class="truncate">
+                        <div class="font-bold text-sm text-slate-900 truncate">${p.title}</div>
+                        <div class="text-[10px] text-slate-500">${p.report_type_display || p.report_type}</div>
+                    </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${badge}">${p.severity_display || p.severity}</span>
+            </div>
+
+            <p class="text-xs text-slate-700 mb-2.5 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">${p.description}</p>
+
+            <div class="space-y-1 text-xs mb-2.5">
+                <div class="flex justify-between"><span class="text-slate-500">Observateur:</span><b class="text-slate-800">${p.author_name || 'Anonyme'}</b></div>
+                ${p.author_phone ? `<div class="flex justify-between"><span class="text-slate-500">Contact:</span><span class="text-slate-700">${p.author_phone}</span></div>` : ''}
+                <div class="flex justify-between"><span class="text-slate-500">Date:</span><span>${p.created_at_display || new Date(p.created_at).toLocaleString('fr-FR')}</span></div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                <span><i class="fas fa-location-dot text-emerald-600"></i> Signalement Citoyen</span>
+                ${verifiedBadge}
             </div>
         </div>
     `;
@@ -544,12 +619,13 @@ function loadMapData() {
                 hydrology: (d.hydrology || []).length,
                 floods: (d.floods || []).length,
                 fires: (d.fires || []).length,
-                incidents: (d.incidents || []).length
+                incidents: (d.incidents || []).length,
+                reports: (d.reports || []).length
             };
 
             const statusEl = document.getElementById('map-status');
             if (statusEl) {
-                statusEl.textContent = `${counts.hydrology} stations hydrologiques GloFAS actives | Réseau hydrographique Mali | Météo Open-Meteo connectée`;
+                statusEl.textContent = `${counts.hydrology} stations GloFAS | ${counts.reports} signalements terrain | Réseau hydrographique Mali`;
             }
 
             const updateEl = document.getElementById('last-update');
@@ -588,7 +664,32 @@ function buildLayers() {
     });
     if (vis.hydrology) grps.hydrology.addTo(map);
 
-    // 2. LANCE Flood Layer (OFF BY DEFAULT)
+    // 2. Field Reports (Crowdsourcing) Layer (ACTIVE BY DEFAULT)
+    if (grps.reports) map.removeLayer(grps.reports);
+    grps.reports = L.layerGroup();
+    (allData.reports || []).forEach(f => {
+        const geom = f.geometry || {};
+        const coords = geom.coordinates || [];
+        const props = f.properties || {};
+        if (coords.length >= 2) {
+            const lon = coords[0];
+            const lat = coords[1];
+            const m = L.marker([lat, lon], { icon: reportIcon(props.report_type, props.severity) });
+            m._data = { ...props, latitude: lat, longitude: lon, _layer: 'reports' };
+            m.bindPopup(fieldReportPopup(props), { maxWidth: 330, className: 'clean-white-popup' });
+            m.on('click', function(e) {
+                if (window.innerWidth < 1024) {
+                    this.closePopup();
+                    map.closePopup();
+                    openBottomSheet('report', props);
+                }
+            });
+            m.addTo(grps.reports);
+        }
+    });
+    if (vis.reports) grps.reports.addTo(map);
+
+    // 3. LANCE Flood Layer (OFF BY DEFAULT)
     if (grps.floods) map.removeLayer(grps.floods);
     grps.floods = L.layerGroup();
     (allData.floods || []).forEach(fl => {
@@ -614,7 +715,7 @@ function buildLayers() {
     });
     if (vis.floods) grps.floods.addTo(map);
 
-    // 3. Climate Summary Layer (OFF BY DEFAULT)
+    // 4. Climate Summary Layer (OFF BY DEFAULT)
     if (grps.climate) map.removeLayer(grps.climate);
     grps.climate = L.layerGroup();
     (allData.climate_summary || []).forEach(cz => {
@@ -633,7 +734,7 @@ function buildLayers() {
     });
     if (vis.climate) grps.climate.addTo(map);
 
-    // 4. FIRMS Fires Layer (OFF BY DEFAULT)
+    // 5. FIRMS Fires Layer (OFF BY DEFAULT)
     if (grps.fires) map.removeLayer(grps.fires);
     grps.fires = L.markerClusterGroup({
         maxClusterRadius: 40,
@@ -665,7 +766,7 @@ function buildLayers() {
 
     buildHeatmap();
 
-    // 5. Incidents (OFF BY DEFAULT)
+    // 6. Incidents (OFF BY DEFAULT)
     if (grps.incidents) map.removeLayer(grps.incidents);
     grps.incidents = L.layerGroup();
     (allData.incidents || []).forEach(inc => {
@@ -696,6 +797,41 @@ function buildHeatmap() {
             gradient: { 0.2: '#93C5FD', 0.4: '#FDE047', 0.6: '#F97316', 1: '#EF4444' }
         });
         if (vis.heatmap) grps.heatmap.addTo(map);
+    }
+}
+
+// ── DYNAMIC REPORT ADDITION ──
+function addReportMarkerToMap(feature) {
+    if (!grps.reports) {
+        grps.reports = L.layerGroup();
+        if (vis.reports) grps.reports.addTo(map);
+    }
+    const coords = (feature.geometry || {}).coordinates || [];
+    const props = feature.properties || {};
+    if (coords.length >= 2) {
+        const lon = coords[0];
+        const lat = coords[1];
+        const m = L.marker([lat, lon], { icon: reportIcon(props.report_type, props.severity) });
+        m._data = { ...props, latitude: lat, longitude: lon, _layer: 'reports' };
+        m.bindPopup(fieldReportPopup(props), { maxWidth: 330, className: 'clean-white-popup' });
+        m.on('click', function(e) {
+            if (window.innerWidth < 1024) {
+                this.closePopup();
+                map.closePopup();
+                openBottomSheet('report', props);
+            }
+        });
+        m.addTo(grps.reports);
+        
+        // Ensure layer is turned ON and visible
+        if (!vis.reports) {
+            toggleLayer('reports');
+        }
+        
+        map.flyTo([lat, lon], 13, { animate: true, duration: 1.2 });
+        setTimeout(() => {
+            if (window.innerWidth >= 1024) m.openPopup();
+        }, 1300);
     }
 }
 
@@ -740,6 +876,7 @@ function openBottomSheet(type, item) {
     if (!sheet || !content) return;
 
     if (type === 'station') content.innerHTML = hydroStationPopup(item);
+    else if (type === 'report') content.innerHTML = fieldReportPopup(item);
     else if (type === 'flood') content.innerHTML = floodPopup(item);
     else if (type === 'climate') content.innerHTML = climatePopup(item);
     else if (type === 'fire') content.innerHTML = firePopup(item);

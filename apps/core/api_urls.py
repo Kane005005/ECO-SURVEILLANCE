@@ -1,6 +1,7 @@
 from django.urls import path
 from . import api_views
 from apps.incidents.views import incident_analyze_api
+from apps.reports.views import api_report_create, api_report_list
 
 app_name = "api"
 
@@ -28,4 +29,8 @@ urlpatterns = [
     path("eco-engine/alerts/", api_views.eco_engine_alerts_api, name="eco_engine_alerts"),
     path("ai/diagnose/", api_views.ai_diagnose_api, name="ai_diagnose"),
     path("ai/chat/", api_views.ai_chat_api, name="ai_chat"),
+    # Field Reports / Crowdsourcing
+    path("reports/create/", api_report_create, name="report_create"),
+    path("reports/list/", api_report_list, name="report_list"),
 ]
+
