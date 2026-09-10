@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Blog & Actualités Écologiques — ECO-SURVEILLANCE MALI{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8 pb-12">
+
+    <!-- HEADER / HERO -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-newspaper"></i>
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900">Blog &amp; Actualités Écologiques</h1>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Articles, études d'impact environnemental et innovations géospatiales pour le Mali
+            </p>
+        </div>
+
+        <!-- SEARCH FORM -->
+        <form method="GET" action="{% url 'cms:blog_list' %}" class="flex items-center gap-2">
+            {% if active_category %}
+            <input type="hidden" name="category" value="{{ active_category }}">
+            {% endif %}
+            <div class="relative">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Rechercher un article..." class="w-48 sm:w-64 pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            </div>
+            <button type="submit" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors">
+                Filtrer
+            </button>
+            {% if search_query or active_category %}
+            <a href="{% url 'cms:blog_list' %}" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded-xl transition-colors" title="Réinitialiser les filtres">
+                <i class="fas fa-times"></i>
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- CATEGORY PILLS -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2">
+        <a href="{% url 'cms:blog_list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all {% if not active_category %}bg-emerald-600 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            Tous les articles
+        </a>
+        {% for cat_code, cat_label in categories %}
+        <a href="{% url 'cms:blog_list' %}?category={{ cat_code }}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap {% if active_category == cat_code %}bg-emerald-600 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            {% if cat_code == 'NEWS' %}📰
+            {% elif cat_code == 'ECOLOGY' %}🌿
+            {% elif cat_code == 'FLOOD_ALERT' %}🌊
+            {% elif cat_code == 'INNOVATION' %}🚀
+            {% endif %}
+            {{ cat_label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- FEATURED ARTICLE (IF ANY) -->
+    {% if featured_post and not search_query and not active_category %}
+    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-card-hover transition-all">
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+            <div class="lg:col-span-7 h-64 sm:h-80 lg:h-full relative overflow-hidden bg-slate-100">
+                <img src="{{ featured_post.image_display_url }}" alt="{{ featured_post.title }}" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500">
+                <span class="absolute top-4 left-4 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider shadow">
+                    À la Une
+                </span>
+            </div>
+            <div class="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]">{{ featured_post.get_category_display }}</span>
+                        <span>•</span>
+                        <span>{{ featured_post.published_at|date:"d F Y"|default:featured_post.created_at|date:"d F Y" }}</span>
+                        <span>•</span>
+                        <span><i class="fas fa-eye text-slate-400 mr-1"></i>{{ featured_post.views_count }} vues</span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-display font-bold text-slate-900 hover:text-emerald-700 transition-colors leading-tight mb-3">
+                        <a href="{% url 'cms:blog_detail' slug=featured_post.slug %}">{{ featured_post.title }}</a>
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                        {{ featured_post.summary }}
+                    </p>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <span class="text-xs font-semibold text-slate-700"><i class="fas fa-user-pen text-slate-400 mr-1.5"></i>{{ featured_post.author_name }}</span>
+                    <a href="{% url 'cms:blog_detail' slug=featured_post.slug %}" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700">
+                        Lire l'article <i class="fas fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- POSTS GRID -->
+    {% if posts %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for post in posts %}
+        {% if post != featured_post or search_query or active_category %}
+        <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-card-hover transition-all flex flex-col justify-between">
+            <div>
+                <a href="{% url 'cms:blog_detail' slug=post.slug %}" class="block h-48 overflow-hidden relative bg-slate-100">
+                    <img src="{{ post.image_display_url }}" alt="{{ post.title }}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+                    <span class="absolute top-3 right-3 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-lg">
+                        {{ post.get_category_display }}
+                    </span>
+                </a>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 text-[10px] text-slate-400 mb-2">
+                        <span>{{ post.published_at|date:"d M Y"|default:post.created_at|date:"d M Y" }}</span>
+                        <span>•</span>
+                        <span><i class="fas fa-eye mr-0.5"></i>{{ post.views_count }}</span>
+                    </div>
+                    <h3 class="font-display font-bold text-base text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 mb-2 leading-snug">
+                        <a href="{% url 'cms:blog_detail' slug=post.slug %}">{{ post.title }}</a>
+                    </h3>
+                    <p class="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                        {{ post.summary }}
+                    </p>
+                </div>
+            </div>
+            <div class="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-medium text-[11px] truncate max-w-[150px]">{{ post.author_name }}</span>
+                <a href="{% url 'cms:blog_detail' slug=post.slug %}" class="text-emerald-600 font-bold hover:underline flex items-center gap-1">
+                    Lire <i class="fas fa-chevron-right text-[9px]"></i>
+                </a>
+            </div>
+        </article>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3">
+        <span class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl mx-auto"><i class="fas fa-inbox"></i></span>
+        <h3 class="font-bold text-base text-slate-800">Aucun article trouvé</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">Aucun article ne correspond à votre recherche ou catégorie sélectionnée.</p>
+        <a href="{% url 'cms:blog_list' %}" class="inline-block mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+            Voir tous les articles
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

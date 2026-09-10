@@ -27,7 +27,8 @@ class GroqProvider(AIProvider):
     def _call_model(self, system_prompt: str, user_prompt: str, max_tokens: int = 400) -> str:
         if not self.api_key:
             return ""
-        models_to_try = [self.model, "openai/gpt-oss-20b", "groq/compound"]
+        models_to_try = [self.model, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound", "qwen/qwen3.6-27b"]
+        models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
         for m in models_to_try:
             payload = {
                 "model": m,

@@ -14,3 +14,5 @@ clé/
 *.key
 *.pem
 *.secret
+video/scenes/
+video/tts/

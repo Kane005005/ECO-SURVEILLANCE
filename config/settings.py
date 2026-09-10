@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.iez",
     "apps.ai",
     "apps.reports",
+    "apps.cms",
 ]
 
 # ── Middleware ─────────────────────────────────────────────
@@ -70,6 +71,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.site_context",
+                "apps.cms.context_processors.cms_context",
             ],
         },
     },
@@ -198,8 +200,9 @@ ERA5_CDS_KEY = config("ERA5_CDS_KEY", default="")
 OPENAQ_API_KEY = config("OPENAQ_API_KEY", default="")
 OPENAQ_BASE_URL = config("OPENAQ_BASE_URL", default="https://api.openaq.org/v3")
 
-# Google Earth Engine (out of MVP)
-GEE_PROJECT = config("GEE_PROJECT", default="")
+# Google Earth Engine
+GEE_PROJECT_ID = config("GEE_PROJECT_ID", default=config("GEE_PROJECT", default="eco-surveillance-506423"))
+GEE_PROJECT = GEE_PROJECT_ID
 
 # ── AI ────────────────────────────────────────────────────
 AI_PROVIDER = config("AI_PROVIDER", default="openai_compat")

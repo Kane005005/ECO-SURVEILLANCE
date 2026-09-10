@@ -62,6 +62,10 @@
             <i class="fas fa-fire text-red-500"></i>
             <span>Incendies &amp; Végétation</span>
         </button>
+        <button onclick="switchTab('tab-cms')" id="btn-tab-cms" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <i class="fas fa-gear text-slate-700"></i>
+            <span>Gestion CMS &amp; Paramètres</span>
+        </button>
     </div>
 </div>
 
@@ -443,6 +447,328 @@
 </div>
 
 <!-- ========================================================================= -->
+<!-- ONGLET 5 : GESTION CMS & PARAMÈTRES DU SITE -->
+<!-- ========================================================================= -->
+<div id="tab-cms" class="tab-content space-y-6">
+
+    <!-- SUB-NAVBAR CMS -->
+    <div class="flex items-center justify-between flex-wrap gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-1.5 overflow-x-auto">
+            <button onclick="switchCmsSubTab('subtab-posts')" id="btn-subtab-posts" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-2">
+                <i class="fas fa-newspaper"></i>
+                <span>Articles de Blog</span>
+            </button>
+            <button onclick="switchCmsSubTab('subtab-portfolio')" id="btn-subtab-portfolio" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-2">
+                <i class="fas fa-cubes text-blue-600"></i>
+                <span>Portfolio &amp; Projets</span>
+            </button>
+            <button onclick="switchCmsSubTab('subtab-settings')" id="btn-subtab-settings" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-2">
+                <i class="fas fa-sliders text-purple-600"></i>
+                <span>Paramètres &amp; Bandeau d'Alerte</span>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{% url 'cms:blog_list' %}" target="_blank" class="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200 flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-eye text-emerald-600"></i> Voir Blog Public
+            </a>
+            <a href="{% url 'cms:portfolio_list' %}" target="_blank" class="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200 flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-eye text-blue-600"></i> Voir Portfolio Public
+            </a>
+        </div>
+    </div>
+
+    <!-- ── SOUS-ONGLET 1 : ARTICLES DE BLOG ── -->
+    <div id="subtab-posts" class="cms-subtab-content space-y-4">
+        <!-- Actions & KPI Header -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
+                    Total articles : <b class="text-emerald-600" id="cms-posts-total">0</b>
+                </div>
+                <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
+                    Lectures cumulées : <b class="text-blue-600" id="cms-posts-views">0</b>
+                </div>
+            </div>
+            <button onclick="openPostModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+                <i class="fas fa-plus"></i> Nouvel Article
+            </button>
+        </div>
+
+        <!-- Table des Articles -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                            <th class="p-3.5 font-bold">Article</th>
+                            <th class="p-3.5 font-bold">Catégorie</th>
+                            <th class="p-3.5 font-bold">Auteur</th>
+                            <th class="p-3.5 font-bold">Vues</th>
+                            <th class="p-3.5 font-bold">Statut</th>
+                            <th class="p-3.5 font-bold">Date</th>
+                            <th class="p-3.5 font-bold text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cms-posts-table-body" class="divide-y divide-slate-100">
+                        <tr><td colspan="7" class="p-6 text-center text-slate-400">Chargement des articles...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SOUS-ONGLET 2 : PORTFOLIO & PROJETS ── -->
+    <div id="subtab-portfolio" class="cms-subtab-content hidden space-y-4">
+        <!-- Actions & KPI Header -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
+                Projets enregistrés : <b class="text-blue-600" id="cms-portfolio-total">0</b>
+            </div>
+            <button onclick="openPortfolioModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+                <i class="fas fa-plus"></i> Ajouter un Projet
+            </button>
+        </div>
+
+        <!-- Grille des Projets -->
+        <div id="cms-portfolio-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+                Chargement du portfolio...
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SOUS-ONGLET 3 : PARAMÈTRES DU SITE & BANDEAU D'ALERTE ── -->
+    <div id="subtab-settings" class="cms-subtab-content hidden">
+        <form id="cms-settings-form" onsubmit="saveSiteSettings(event)" class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+                <div>
+                    <h2 class="font-display font-bold text-base text-slate-900">Configuration Globale de la Plateforme</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Identité, contacts institutionnels et diffusion d'alertes d'urgence nationales</p>
+                </div>
+                <button type="submit" id="btn-save-settings" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+                    <i class="fas fa-floppy-disk"></i> Enregistrer
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- COLONNE 1 : IDENTITÉ & CONTACTS -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-building text-blue-600"></i> Identité &amp; Coordonnées
+                    </h3>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nom de la Plateforme</label>
+                        <input type="text" id="setting-site_name" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Slogan / Sous-titre</label>
+                        <input type="text" id="setting-site_tagline" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Email de Contact</label>
+                            <input type="email" id="setting-contact_email" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Numéro Vert d'Urgence</label>
+                            <input type="text" id="setting-emergency_line" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none font-bold text-red-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Téléphone Standard</label>
+                            <input type="text" id="setting-contact_phone" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Ligne WhatsApp Directe</label>
+                            <input type="text" id="setting-whatsapp_phone" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Adresse Officielle du Siège</label>
+                        <input type="text" id="setting-headquarters_address" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- COLONNE 2 : RÉSEAUX & BANDEAU D'ALERTE -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-bullhorn text-red-600"></i> Bandeau d'Alerte &amp; Réseaux
+                    </h3>
+
+                    <!-- Alert Banner Card -->
+                    <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-amber-900">Bandeau d'Alerte National en Tête de Page</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-alert_banner_active" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Message du bandeau d'alerte</label>
+                            <input type="text" id="setting-alert_banner_text" placeholder="Ex: Alerte crue fleuve Niger en cours — Vigilance rouge sur Mopti" class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Niveau d'urgence du bandeau</label>
+                            <select id="setting-alert_banner_level" class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                <option value="INFO">Information (Bleu)</option>
+                                <option value="WARNING">Vigilance (Orange)</option>
+                                <option value="DANGER">Danger / Alerte (Rouge)</option>
+                                <option value="CRITICAL">Urgence Absolue (Violet/Noir)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Social links -->
+                    <div class="space-y-2 pt-2">
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase">Réseaux Sociaux</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <input type="url" id="setting-facebook_url" placeholder="https://facebook.com/..." class="px-3 py-1.5 border border-slate-200 rounded-xl">
+                            <input type="url" id="setting-twitter_url" placeholder="https://twitter.com/..." class="px-3 py-1.5 border border-slate-200 rounded-xl">
+                            <input type="url" id="setting-linkedin_url" placeholder="https://linkedin.com/..." class="px-3 py-1.5 border border-slate-200 rounded-xl">
+                            <input type="url" id="setting-github_url" placeholder="https://github.com/..." class="px-3 py-1.5 border border-slate-200 rounded-xl">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL CRÉATION / ÉDITION ARTICLE BLOG -->
+<!-- ========================================================================= -->
+<div id="post-modal" class="fixed inset-0 z-50 overflow-hidden hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onclick="closePostModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="font-display font-bold text-base text-slate-900" id="post-modal-title">Nouvel Article de Blog</h3>
+                <button onclick="closePostModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="post-form" onsubmit="savePostForm(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="post-id">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Titre de l'article *</label>
+                    <input type="text" id="post-title" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Catégorie</label>
+                        <select id="post-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="NEWS">Actualités</option>
+                            <option value="ECOLOGY">Écologie &amp; Biodiversité</option>
+                            <option value="FLOOD_ALERT">Alerte Inondation</option>
+                            <option value="INNOVATION">Innovation &amp; Tech</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Statut</label>
+                        <select id="post-status" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="PUBLISHED">Publié</option>
+                            <option value="DRAFT">Brouillon</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nom de l'auteur</label>
+                        <input type="text" id="post-author" value="Équipe ECO-SURVEILLANCE" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">URL Image de couverture (optionnel)</label>
+                        <input type="url" id="post-cover-url" placeholder="https://..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Résumé / Accroche *</label>
+                    <textarea id="post-summary" rows="2" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Corps de l'article *</label>
+                    <textarea id="post-content" rows="6" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closePostModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors">Annuler</button>
+                    <button type="submit" id="btn-submit-post" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors">Enregistrer l'article</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL CRÉATION / ÉDITION PROJET PORTFOLIO -->
+<!-- ========================================================================= -->
+<div id="portfolio-modal" class="fixed inset-0 z-50 overflow-hidden hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onclick="closePortfolioModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="font-display font-bold text-base text-slate-900" id="portfolio-modal-title">Nouveau Projet Portfolio</h3>
+                <button onclick="closePortfolioModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="portfolio-form" onsubmit="savePortfolioForm(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="portfolio-id">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Titre du Projet *</label>
+                    <input type="text" id="portfolio-title" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Sous-titre / Enjeu</label>
+                        <input type="text" id="portfolio-subtitle" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Catégorie</label>
+                        <select id="portfolio-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="SURVEILLANCE">Surveillance Spatiale</option>
+                            <option value="HYDROLOGIE">Modélisation Hydrologique</option>
+                            <option value="AI_PREDICTION">Intelligence Artificielle &amp; IA</option>
+                            <option value="COMMUNAUTE">Alerte &amp; Mobilisation</option>
+                            <option value="BIODIVERSITE">Biodiversité &amp; Forêts</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Partenaire ou Client</label>
+                        <input type="text" id="portfolio-partner" placeholder="Ex: DNH Mali, Direction des Eaux & Forêts" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Lien Démo / En savoir plus</label>
+                        <input type="text" id="portfolio-demo-url" placeholder="/map/ ou https://..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Technologies &amp; Sources de données</label>
+                    <input type="text" id="portfolio-tech" value="Google Earth Engine, Sentinel-2, GloFAS, Django, Leaflet" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">URL Image de couverture</label>
+                    <input type="url" id="portfolio-cover-url" placeholder="https://..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Description détaillée *</label>
+                    <textarea id="portfolio-description" rows="4" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="portfolio-featured" class="w-4 h-4 rounded text-blue-600 border-slate-300">
+                    <label for="portfolio-featured" class="font-semibold text-slate-700 cursor-pointer">Mettre en avant sur la page d'accueil (Projet Phare)</label>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closePortfolioModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors">Annuler</button>
+                    <button type="submit" id="btn-submit-portfolio" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">Enregistrer le projet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
 <!-- MODAL COPILOTE IA GPT-OSS (SLIDE-OVER INTERACTIF) -->
 <!-- ========================================================================= -->
 <div id="copilot-modal" class="fixed inset-0 z-50 overflow-hidden hidden">
@@ -536,9 +862,10 @@ function loadAllDashboardData() {
         fetch('/api/hydrology/forecasts/').then(r => r.json()),
         fetch('/api/climate/live/').then(r => r.json()),
         fetch('/api/eco-engine/alerts/').then(r => r.json()),
-        fetch('/api/hydrology/stations/').then(r => r.json())
-    ]).then(([dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations]) => {
-        cachedData = { dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations };
+        fetch('/api/hydrology/stations/').then(r => r.json()),
+        fetch('/api/cms/data/').then(r => r.json())
+    ]).then(([dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations, cmsData]) => {
+        cachedData = { dash, zones, incidents, hydroForecasts, climateLive, ecoAlerts, stations, cmsData };
 
         // Populate Tab 1: Synthèse
         populateTab1(dash, zones.zones || [], ecoAlerts.alerts || dash.eco_engine_alerts || []);
@@ -551,6 +878,9 @@ function loadAllDashboardData() {
 
         // Populate Tab 4: Feux
         populateTab4(dash, incidents.incidents || []);
+
+        // Populate Tab 5: CMS & Paramètres
+        populateTab5Cms(cmsData);
 
     }).catch(err => {
         console.error("Dashboard error:", err);
@@ -939,7 +1269,340 @@ function sendCopilotMessage() {
     });
 }
 
+// ── CMS MANAGEMENT JAVASCRIPT (TAB 5) ──
+let cachedCms = { posts: [], portfolio: [], settings: {} };
+
+function switchCmsSubTab(subTabId) {
+    document.querySelectorAll('.cms-subtab-content').forEach(el => el.classList.add('hidden'));
+    ['btn-subtab-posts', 'btn-subtab-portfolio', 'btn-subtab-settings'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-2";
+        }
+    });
+
+    const activeEl = document.getElementById(subTabId);
+    if (activeEl) activeEl.classList.remove('hidden');
+
+    const activeBtn = document.getElementById('btn-' + subTabId);
+    if (activeBtn) {
+        activeBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-2";
+    }
+}
+
+function loadCmsData() {
+    fetch('/api/cms/data/')
+        .then(r => r.json())
+        .then(data => {
+            populateTab5Cms(data);
+        })
+        .catch(err => console.error("CMS data fetch error:", err));
+}
+
+function populateTab5Cms(data) {
+    if (!data) return;
+    cachedCms = data;
+
+    // 1. Posts Subtab
+    const posts = data.posts || [];
+    document.getElementById('cms-posts-total').textContent = posts.length;
+    const totalViews = posts.reduce((sum, p) => sum + (p.views_count || 0), 0);
+    document.getElementById('cms-posts-views').textContent = totalViews.toLocaleString('fr-FR');
+
+    const tbody = document.getElementById('cms-posts-table-body');
+    if (tbody) {
+        if (!posts.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Aucun article enregistré pour le moment.</td></tr>';
+        } else {
+            tbody.innerHTML = posts.map(p => {
+                const catLabels = { NEWS: 'Actualités', ECOLOGY: 'Écologie', FLOOD_ALERT: 'Alerte Inondation', INNOVATION: 'Innovation' };
+                const isPub = p.status === 'PUBLISHED';
+                return `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="p-3.5">
+                            <div class="font-bold text-slate-900 line-clamp-1">${p.title}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">/blog/${p.slug}/</div>
+                        </td>
+                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-semibold">${catLabels[p.category] || p.category}</span></td>
+                        <td class="p-3.5 text-slate-600">${p.author_name}</td>
+                        <td class="p-3.5 font-bold text-slate-800">${p.views_count || 0}</td>
+                        <td class="p-3.5">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                                ${isPub ? 'Publié' : 'Brouillon'}
+                            </span>
+                        </td>
+                        <td class="p-3.5 text-slate-500 text-[11px]">${p.published_at_display || p.created_at_display || '—'}</td>
+                        <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+                            <a href="/blog/${p.slug}/" target="_blank" class="p-1.5 text-slate-400 hover:text-emerald-600 inline-block" title="Voir l'article"><i class="fas fa-arrow-up-right-from-square"></i></a>
+                            <button onclick="openPostModal(${p.id})" class="p-1.5 text-slate-400 hover:text-blue-600" title="Éditer"><i class="fas fa-pen-to-square"></i></button>
+                            <button onclick="deletePost(${p.id})" class="p-1.5 text-slate-400 hover:text-red-600" title="Supprimer"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // 2. Portfolio Subtab
+    const portfolio = data.portfolio || [];
+    document.getElementById('cms-portfolio-total').textContent = portfolio.length;
+
+    const grid = document.getElementById('cms-portfolio-grid');
+    if (grid) {
+        if (!portfolio.length) {
+            grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">Aucun projet dans le portfolio.</div>';
+        } else {
+            grid.innerHTML = portfolio.map(pr => {
+                return `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[10px] uppercase">${pr.category}</span>
+                                ${pr.is_featured ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">★ Phare</span>' : ''}
+                            </div>
+                            <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${pr.title}</h4>
+                            <p class="text-xs text-slate-500 mt-1 line-clamp-2">${pr.subtitle || pr.description || ''}</p>
+                            ${pr.partner_or_client ? `<div class="text-[11px] text-slate-600 mt-2"><i class="fas fa-handshake text-blue-500 mr-1"></i>${pr.partner_or_client}</div>` : ''}
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-[10px] text-slate-400 font-mono">${pr.completion_date_display || 'Opérationnel'}</span>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="openPortfolioModal(${pr.id})" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg">Éditer</button>
+                                <button onclick="deletePortfolio(${pr.id})" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-semibold rounded-lg">Supprimer</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // 3. Settings Subtab
+    const set = data.settings || {};
+    if (document.getElementById('setting-site_name')) {
+        document.getElementById('setting-site_name').value = set.site_name || 'ECO-SURVEILLANCE MALI';
+        document.getElementById('setting-site_tagline').value = set.site_tagline || '';
+        document.getElementById('setting-contact_email').value = set.contact_email || '';
+        document.getElementById('setting-emergency_line').value = set.emergency_line || '';
+        document.getElementById('setting-contact_phone').value = set.contact_phone || '';
+        document.getElementById('setting-whatsapp_phone').value = set.whatsapp_phone || '';
+        document.getElementById('setting-headquarters_address').value = set.headquarters_address || '';
+        document.getElementById('setting-alert_banner_active').checked = !!set.alert_banner_active;
+        document.getElementById('setting-alert_banner_text').value = set.alert_banner_text || '';
+        document.getElementById('setting-alert_banner_level').value = set.alert_banner_level || 'WARNING';
+        document.getElementById('setting-facebook_url').value = set.facebook_url || '';
+        document.getElementById('setting-twitter_url').value = set.twitter_url || '';
+        document.getElementById('setting-linkedin_url').value = set.linkedin_url || '';
+        document.getElementById('setting-github_url').value = set.github_url || '';
+    }
+}
+
+// Post Modal & Actions
+function openPostModal(postId = null) {
+    const modal = document.getElementById('post-modal');
+    const titleEl = document.getElementById('post-modal-title');
+    document.getElementById('post-form').reset();
+    document.getElementById('post-id').value = '';
+
+    if (postId && cachedCms.posts) {
+        const p = cachedCms.posts.find(x => x.id === postId);
+        if (p) {
+            titleEl.textContent = "Éditer l'Article de Blog";
+            document.getElementById('post-id').value = p.id;
+            document.getElementById('post-title').value = p.title || '';
+            document.getElementById('post-category').value = p.category || 'NEWS';
+            document.getElementById('post-status').value = p.status || 'PUBLISHED';
+            document.getElementById('post-author').value = p.author_name || 'Équipe ECO-SURVEILLANCE';
+            document.getElementById('post-cover-url').value = p.cover_image_url || '';
+            document.getElementById('post-summary').value = p.summary || '';
+            document.getElementById('post-content').value = p.content || '';
+        }
+    } else {
+        titleEl.textContent = "Nouvel Article de Blog";
+    }
+    modal.classList.remove('hidden');
+}
+
+function closePostModal() {
+    document.getElementById('post-modal').classList.add('hidden');
+}
+
+function savePostForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-post');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enregistrement...';
+
+    const postId = document.getElementById('post-id').value;
+    const url = postId ? `/api/cms/posts/${postId}/update/` : '/api/cms/posts/create/';
+    const payload = {
+        title: document.getElementById('post-title').value,
+        category: document.getElementById('post-category').value,
+        status: document.getElementById('post-status').value,
+        author_name: document.getElementById('post-author').value,
+        cover_image_url: document.getElementById('post-cover-url').value,
+        summary: document.getElementById('post-summary').value,
+        content: document.getElementById('post-content').value,
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = 'Enregistrer l\'article';
+        closePostModal();
+        loadCmsData();
+        alert('🎉 ' + (res.message || 'Article enregistré'));
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = 'Enregistrer l\'article';
+        alert('Erreur : ' + err.message);
+    });
+}
+
+function deletePost(postId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    fetch(`/api/cms/posts/${postId}/delete/`, { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+            loadCmsData();
+            alert('Article supprimé');
+        })
+        .catch(err => alert('Erreur : ' + err.message));
+}
+
+// Portfolio Modal & Actions
+function openPortfolioModal(projId = null) {
+    const modal = document.getElementById('portfolio-modal');
+    const titleEl = document.getElementById('portfolio-modal-title');
+    document.getElementById('portfolio-form').reset();
+    document.getElementById('portfolio-id').value = '';
+
+    if (projId && cachedCms.portfolio) {
+        const pr = cachedCms.portfolio.find(x => x.id === projId);
+        if (pr) {
+            titleEl.textContent = "Éditer le Projet";
+            document.getElementById('portfolio-id').value = pr.id;
+            document.getElementById('portfolio-title').value = pr.title || '';
+            document.getElementById('portfolio-subtitle').value = pr.subtitle || '';
+            document.getElementById('portfolio-category').value = pr.category || 'SURVEILLANCE';
+            document.getElementById('portfolio-partner').value = pr.partner_or_client || '';
+            document.getElementById('portfolio-demo-url').value = pr.demo_url || '';
+            document.getElementById('portfolio-tech').value = pr.technologies_used || '';
+            document.getElementById('portfolio-cover-url').value = pr.cover_image_url || '';
+            document.getElementById('portfolio-description').value = pr.description || '';
+            document.getElementById('portfolio-featured').checked = !!pr.is_featured;
+        }
+    } else {
+        titleEl.textContent = "Nouveau Projet Portfolio";
+    }
+    modal.classList.remove('hidden');
+}
+
+function closePortfolioModal() {
+    document.getElementById('portfolio-modal').classList.add('hidden');
+}
+
+function savePortfolioForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-portfolio');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enregistrement...';
+
+    const projId = document.getElementById('portfolio-id').value;
+    const url = projId ? `/api/cms/portfolio/${projId}/update/` : '/api/cms/portfolio/create/';
+    const payload = {
+        title: document.getElementById('portfolio-title').value,
+        subtitle: document.getElementById('portfolio-subtitle').value,
+        category: document.getElementById('portfolio-category').value,
+        partner_or_client: document.getElementById('portfolio-partner').value,
+        demo_url: document.getElementById('portfolio-demo-url').value,
+        technologies_used: document.getElementById('portfolio-tech').value,
+        cover_image_url: document.getElementById('portfolio-cover-url').value,
+        description: document.getElementById('portfolio-description').value,
+        is_featured: document.getElementById('portfolio-featured').checked,
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = 'Enregistrer le projet';
+        closePortfolioModal();
+        loadCmsData();
+        alert('🎉 ' + (res.message || 'Projet enregistré'));
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = 'Enregistrer le projet';
+        alert('Erreur : ' + err.message);
+    });
+}
+
+function deletePortfolio(projId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet du portfolio ?')) return;
+    fetch(`/api/cms/portfolio/${projId}/delete/`, { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+            loadCmsData();
+            alert('Projet supprimé');
+        })
+        .catch(err => alert('Erreur : ' + err.message));
+}
+
+// Site Settings
+function saveSiteSettings(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-settings');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enregistrement...';
+
+    const payload = {
+        site_name: document.getElementById('setting-site_name').value,
+        site_tagline: document.getElementById('setting-site_tagline').value,
+        contact_email: document.getElementById('setting-contact_email').value,
+        emergency_line: document.getElementById('setting-emergency_line').value,
+        contact_phone: document.getElementById('setting-contact_phone').value,
+        whatsapp_phone: document.getElementById('setting-whatsapp_phone').value,
+        headquarters_address: document.getElementById('setting-headquarters_address').value,
+        alert_banner_active: document.getElementById('setting-alert_banner_active').checked,
+        alert_banner_text: document.getElementById('setting-alert_banner_text').value,
+        alert_banner_level: document.getElementById('setting-alert_banner_level').value,
+        facebook_url: document.getElementById('setting-facebook_url').value,
+        twitter_url: document.getElementById('setting-twitter_url').value,
+        linkedin_url: document.getElementById('setting-linkedin_url').value,
+        github_url: document.getElementById('setting-github_url').value,
+    };
+
+    fetch('/api/cms/settings/update/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Enregistrer';
+        alert('🎉 Paramètres enregistrés avec succès !');
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Enregistrer';
+        alert('Erreur : ' + err.message);
+    });
+}
+
 // Auto init
 document.addEventListener('DOMContentLoaded', loadAllDashboardData);
 </script>
 {% endblock %}
+

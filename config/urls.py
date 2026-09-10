@@ -22,6 +22,7 @@ urlpatterns = [
     path("iez/", include("apps.iez.urls")),
     path("reports/", include("apps.reports.urls")),
     path("ai/", include("apps.ai.urls")),
+    path("", include("apps.cms.urls")),
 ]
 
 if settings.DEBUG:

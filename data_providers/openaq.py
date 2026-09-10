@@ -33,7 +33,9 @@ class OpenAQProvider(BaseDataProvider):
 
     def __init__(self, api_key: str = "", **kwargs):
         super().__init__(**kwargs)
-        self.api_key = api_key or os.environ.get("OPENAQ_API_KEY", "")
+        from django.conf import settings
+        from decouple import config
+        self.api_key = api_key or getattr(settings, "OPENAQ_API_KEY", "") or config("OPENAQ_API_KEY", default="") or os.environ.get("OPENAQ_API_KEY", "")
         import requests
         self.session = requests.Session()
         if self.api_key:

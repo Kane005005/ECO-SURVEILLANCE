@@ -48,8 +48,10 @@ class Sentinel2Provider(BaseDataProvider):
 
     def __init__(self, client_id: str = "", client_secret: str = "", **kwargs):
         super().__init__(**kwargs)
-        self.client_id = client_id
-        self.client_secret = client_secret
+        from django.conf import settings
+        from decouple import config
+        self.client_id = client_id or getattr(settings, "CDSE_CLIENT_ID", "") or config("CDSE_CLIENT_ID", default="")
+        self.client_secret = client_secret or getattr(settings, "CDSE_CLIENT_SECRET", "") or config("CDSE_CLIENT_SECRET", default="")
         self._token = None
         self._token_expiry = None
         import requests

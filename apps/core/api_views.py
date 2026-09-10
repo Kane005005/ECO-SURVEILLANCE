@@ -808,5 +808,71 @@ def climate_live_api(request):
     return JsonResponse({"status": "ok", "cities": overview, "count": len(overview), "cached": False})
 
 
+def gee_tiles_api(request):
+    """
+    API endpoint: GET /api/satellite/gee-tiles/?layer=forest&start_date=...&end_date=...
+    Returns XYZ Leaflet tile URL for Sentinel-2 GEE layer (forest, ndvi, ndmi).
+    """
+    from data_providers.gee import GEEProvider
+
+    layer = request.GET.get("layer", "forest")
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    provider = GEEProvider()
+    tile_data = provider.get_leaflet_tile_url(
+        layer_type=layer,
+        start_date=start_date,
+        end_date=end_date
+    )
+    provider.close()
+    return JsonResponse(tile_data)
+
+
+@csrf_exempt
+def forestry_zonal_stats_api(request):
+    """
+    API endpoint: POST /api/forestry/zonal-stats/
+    Calculates zonal stats (mean NDVI, NDMI, canopy coverage %) on a GeoJSON polygon.
+    """
+    from data_providers.gee import GEEProvider
+
+    geojson_geometry = None
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8")) if request.body else {}
+            if "geometry" in body:
+                geojson_geometry = body["geometry"]
+            elif "type" in body and body["type"] in ["Polygon", "MultiPolygon", "Feature", "FeatureCollection"]:
+                geojson_geometry = body
+            else:
+                geojson_geometry = body
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Format JSON invalide"}, status=400)
+    elif request.method == "GET":
+        raw_geom = request.GET.get("geometry")
+        if raw_geom:
+            try:
+                geojson_geometry = json.loads(raw_geom)
+            except Exception:
+                pass
+        else:
+            # Default demo polygon (Bougouni / Sikasso forest corridor)
+            geojson_geometry = {
+                "type": "Polygon",
+                "coordinates": [[
+                    [-7.5, 11.2], [-7.2, 11.2], [-7.2, 11.5], [-7.5, 11.5], [-7.5, 11.2]
+                ]]
+            }
+
+    if not geojson_geometry:
+        return JsonResponse({"status": "error", "message": "Polygone GeoJSON requis"}, status=400)
+
+    provider = GEEProvider()
+    stats = provider.get_forest_zonal_stats(geojson_geometry)
+    provider.close()
+    return JsonResponse(stats)
+
+
 
 

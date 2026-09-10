@@ -29,6 +29,9 @@ urlpatterns = [
     path("eco-engine/alerts/", api_views.eco_engine_alerts_api, name="eco_engine_alerts"),
     path("ai/diagnose/", api_views.ai_diagnose_api, name="ai_diagnose"),
     path("ai/chat/", api_views.ai_chat_api, name="ai_chat"),
+    # Google Earth Engine & Forests
+    path("satellite/gee-tiles/", api_views.gee_tiles_api, name="gee_tiles"),
+    path("forestry/zonal-stats/", api_views.forestry_zonal_stats_api, name="forestry_zonal_stats"),
     # Field Reports / Crowdsourcing
     path("reports/create/", api_report_create, name="report_create"),
     path("reports/list/", api_report_list, name="report_list"),

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Portfolio & Réalisations — ECO-SURVEILLANCE MALI{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8 pb-16">
+
+    <!-- HEADER / HERO -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-cubes"></i>
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900">Portfolio &amp; Réalisations</h1>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Vitrine des systèmes spatiaux, algorithmes d'alerte et déploiements opérationnels au Mali
+            </p>
+        </div>
+
+        <a href="{% url 'core:map' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors flex-shrink-0">
+            <i class="fas fa-map-location-dot"></i> Explorer la carte en direct
+        </a>
+    </div>
+
+    <!-- CATEGORY PILLS -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2">
+        <a href="{% url 'cms:portfolio_list' %}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all {% if not active_category %}bg-blue-600 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            Tous les projets
+        </a>
+        {% for cat_code, cat_label in categories %}
+        <a href="{% url 'cms:portfolio_list' %}?category={{ cat_code }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap {% if active_category == cat_code %}bg-blue-600 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">
+            {{ cat_label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- PROJECTS GRID -->
+    {% if projects %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for project in projects %}
+        <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-card-hover transition-all flex flex-col justify-between">
+            <div>
+                <!-- COVER IMAGE & BADGES -->
+                <div class="h-48 overflow-hidden relative bg-slate-100">
+                    <img src="{{ project.image_display_url }}" alt="{{ project.title }}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+                    <div class="absolute top-3 left-3 flex items-center gap-1.5">
+                        <span class="px-2.5 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
+                            {{ project.get_category_display }}
+                        </span>
+                        {% if project.is_featured %}
+                        <span class="px-2.5 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-lg shadow">
+                            ★ Phare
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- BODY -->
+                <div class="p-6 space-y-3">
+                    <h3 class="font-display font-bold text-lg text-slate-900 leading-snug">
+                        {{ project.title }}
+                    </h3>
+
+                    {% if project.subtitle %}
+                    <p class="text-xs font-semibold text-blue-700">
+                        {{ project.subtitle }}
+                    </p>
+                    {% endif %}
+
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        {{ project.description }}
+                    </p>
+
+                    <!-- PARTNER -->
+                    {% if project.partner_or_client %}
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2 text-[11px] text-slate-700">
+                        <i class="fas fa-handshake text-blue-600"></i>
+                        <span>Partenaire : <b>{{ project.partner_or_client }}</b></span>
+                    </div>
+                    {% endif %}
+
+                    <!-- TECH STACK -->
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Technologies &amp; Données</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-medium rounded-md font-mono">{{ project.technologies_used }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] text-slate-400">
+                    {% if project.completion_date %}
+                    Finalisé : {{ project.completion_date|date:"Y" }}
+                    {% else %}
+                    Opérationnel
+                    {% endif %}
+                </span>
+                {% if project.demo_url %}
+                <a href="{{ project.demo_url }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors">
+                    Voir le système <i class="fas fa-external-link-alt text-[9px]"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3">
+        <span class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl mx-auto"><i class="fas fa-folder-open"></i></span>
+        <h3 class="font-bold text-base text-slate-800">Aucun projet trouvé</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">Aucune réalisation ne correspond à la catégorie sélectionnée.</p>
+        <a href="{% url 'cms:portfolio_list' %}" class="inline-block mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+            Voir tous les projets
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

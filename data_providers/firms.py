@@ -21,8 +21,10 @@ class FIRMSProvider(BaseDataProvider):
 
     def __init__(self, map_key: Optional[str] = None, source: str = "VIIRS", **kwargs):
         super().__init__(**kwargs)
-        self.map_key = map_key
-        self.source = source
+        from django.conf import settings
+        from decouple import config
+        self.map_key = map_key or getattr(settings, "FIRMS_MAP_KEY", "") or config("FIRMS_MAP_KEY", default="")
+        self.source = source or getattr(settings, "FIRMS_SOURCE", "VIIRS") or config("FIRMS_SOURCE", default="VIIRS")
         import requests
         self.session = requests.Session()
 
@@ -44,7 +46,7 @@ class FIRMSProvider(BaseDataProvider):
         elif source_name == "MODIS":
             source_name = "MODIS_NRT"
 
-        days_clamped = max(1, min(int(days), 10))
+        days_clamped = max(1, min(int(days), 5))
         endpoint = f"{self.BASE_URL}/csv/{self.map_key}/{source_name}/{bbox['min_lon']},{bbox['min_lat']},{bbox['max_lon']},{bbox['max_lat']}/{days_clamped}"
         try:
             response = self.session.get(endpoint, timeout=30)

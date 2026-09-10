@@ -164,6 +164,18 @@
                 <i class="fas fa-tower-broadcast w-5 text-center text-sm text-data-600"></i>
                 <span>Stations</span>
             </a>
+
+            <div class="px-3 mt-4 mb-2">
+                <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Portail &amp; Publications</span>
+            </div>
+            <a href="{% url 'cms:blog_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-newspaper w-5 text-center text-sm text-emerald-600"></i>
+                <span>Blog &amp; Actualités</span>
+            </a>
+            <a href="{% url 'cms:portfolio_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
+                <i class="fas fa-cubes w-5 text-center text-sm text-blue-600"></i>
+                <span>Portfolio Réalisations</span>
+            </a>
         </nav>
 
         <!-- Bottom -->
@@ -219,6 +231,15 @@
         <!-- PAGE CONTENT -->
         <main class="pt-14 min-h-screen">
             <div class="p-4 lg:p-6">
+                {% if site_settings and site_settings.alert_banner_active and site_settings.alert_banner_text %}
+                <div class="mb-5 p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs font-semibold shadow-sm {% if site_settings.alert_banner_level == 'CRITICAL' %}bg-purple-900 text-white border border-purple-700{% elif site_settings.alert_banner_level == 'DANGER' %}bg-red-600 text-white border border-red-700{% elif site_settings.alert_banner_level == 'WARNING' %}bg-amber-500 text-slate-950 border border-amber-600{% else %}bg-blue-600 text-white border border-blue-700{% endif %}">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-triangle-exclamation text-base"></i>
+                        <span>{{ site_settings.alert_banner_text }}</span>
+                    </div>
+                    <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-black/20 text-white font-bold flex-shrink-0">ALERTE NATIONALE</span>
+                </div>
+                {% endif %}
                 {% block content %}{% endblock %}
             </div>
         </main>

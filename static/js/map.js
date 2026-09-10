@@ -38,7 +38,8 @@ let grps = {
     no2: null,
     risks: null,
     heatmap: null,
-    reports: null
+    reports: null,
+    geeForest: null
 };
 
 // Initial state: Hydrography, Stations, and Field Reports are active
@@ -56,7 +57,8 @@ let vis = {
     risks: false,
     heatmap: false,
     zones: false,
-    stations: false
+    stations: false,
+    geeForest: false
 };
 
 let activeSeverities = new Set(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']);
@@ -859,6 +861,35 @@ function toggleLayer(name) {
     } else if (name === 'maliHydro') {
         if (vis[name]) { if (grps.baseMaliHydro) grps.baseMaliHydro.addTo(map); }
         else { if (grps.baseMaliHydro) map.removeLayer(grps.baseMaliHydro); }
+    } else if (name === 'geeForest') {
+        if (vis.geeForest) {
+            if (grps.geeForest) {
+                map.addLayer(grps.geeForest);
+            } else {
+                const statusEl = document.getElementById('map-status');
+                if (statusEl) statusEl.textContent = 'Chargement des tuiles Sentinel-2 GEE Forêts...';
+                fetch('/api/satellite/gee-tiles/?layer=forest')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.tile_url) {
+                            grps.geeForest = L.tileLayer(data.tile_url, {
+                                maxZoom: 18,
+                                attribution: 'Google Earth Engine &copy; Copernicus Sentinel-2'
+                            });
+                            if (vis.geeForest) {
+                                grps.geeForest.addTo(map);
+                            }
+                        }
+                        if (statusEl) statusEl.textContent = 'Couche Forêts & Canopée GEE active';
+                    })
+                    .catch(err => {
+                        console.error('GEE tile error:', err);
+                        if (statusEl) statusEl.textContent = 'Erreur chargement tuiles GEE';
+                    });
+            }
+        } else {
+            if (grps.geeForest) map.removeLayer(grps.geeForest);
+        }
     } else {
         if (vis[name]) { if (grps[name]) map.addLayer(grps[name]); }
         else { if (grps[name]) map.removeLayer(grps[name]); }
