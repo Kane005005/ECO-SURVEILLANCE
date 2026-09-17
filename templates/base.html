@@ -158,6 +158,15 @@
             </a>
 
             <div class="px-3 mt-4 mb-2">
+                <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Urgences & Directions</span>
+            </div>
+            <a href="{% url 'core:map' %}?action=contact" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg mx-2 border border-red-200/80 bg-red-50/40">
+                <i class="fas fa-phone-volume w-5 text-center text-sm text-red-600"></i>
+                <span>Contacter les structures</span>
+                <span class="ml-auto text-[10px] font-extrabold bg-red-600 text-white px-2 py-0.5 rounded-full shadow-xs">122</span>
+            </a>
+
+            <div class="px-3 mt-4 mb-2">
                 <span class="text-[10px] font-semibold text-ink-faint uppercase tracking-wider px-3">Infrastructure</span>
             </div>
             <a href="{% url 'sensors:station_list' %}" class="sidebar-link flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft rounded-lg mx-2">
@@ -208,7 +217,13 @@
                     <span class="w-2 h-2 rounded-full bg-risk-normal pulse-dot"></span>
                     <span id="connection-status">En ligne</span>
                 </div>
-                <div class="hidden md:block text-xs text-ink-muted" id="current-time"></div>
+                <!-- Urgences 122 Quick Button -->
+                <a href="{% url 'core:map' %}?action=contact" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-sm transition-all ring-2 ring-red-200" title="Contacter les directions régionales et services d'urgence (122)">
+                    <i class="fas fa-phone-volume"></i>
+                    <span class="hidden sm:inline">Contacter les structures</span>
+                    <span class="sm:hidden font-black">122</span>
+                </a>
+
                 <!-- Notifications bell -->
                 <div class="relative">
                     <button onclick="toggleNotifications()" class="p-2 text-ink-muted hover:text-ink transition-colors relative">

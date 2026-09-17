@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import api_views
 from apps.incidents.views import incident_analyze_api
 from apps.reports.views import api_report_create, api_report_list
@@ -6,6 +6,7 @@ from apps.reports.views import api_report_create, api_report_list
 app_name = "api"
 
 urlpatterns = [
+    path("geography/", include("apps.geography.urls")),
     path("dashboard/", api_views.dashboard_api, name="dashboard"),
     path("map/", api_views.map_api, name="map"),
     path("zones/", api_views.zones_api, name="zones"),

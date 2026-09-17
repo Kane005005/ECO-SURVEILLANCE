@@ -21,7 +21,9 @@ let allData = {
     floods: [],
     climate_summary: [],
     eco_alerts: [],
-    reports: []
+    reports: [],
+    directorates: [],
+    admin_regions: []
 };
 
 let grps = {
@@ -39,14 +41,18 @@ let grps = {
     risks: null,
     heatmap: null,
     reports: null,
-    geeForest: null
+    geeForest: null,
+    directorates: null,
+    adminRegions: null
 };
 
-// Initial state: Hydrography, Stations, and Field Reports are active
+// Initial state: Hydrography, Stations, Field Reports, and Regional Directorates are active
 let vis = {
     maliHydro: true,
     hydrology: true,
     reports: true,
+    directorates: true,
+    adminRegions: false,
     floods: false,
     climate: false,
     fires: false,
@@ -61,6 +67,7 @@ let vis = {
     geeForest: false
 };
 
+let activeDirectorateSubtypes = new Set(['DRPC', 'DRH', 'DREF', 'DRACPN', 'DRA', 'OTHER']);
 let activeSeverities = new Set(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']);
 let autoRefreshInterval = null;
 
@@ -321,6 +328,37 @@ function alertLevelBadge(level) {
     return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${c[level] || c.GREEN}">${labels[level] || level}</span>`;
 }
 
+function directorateIcon(type) {
+    const config = {
+        DRPC: { icon: 'fa-shield-halved', bg: '#DC2626', shadow: 'rgba(220, 38, 38, 0.55)' },
+        DRH: { icon: 'fa-droplet', bg: '#0284C7', shadow: 'rgba(2, 132, 199, 0.55)' },
+        DREF: { icon: 'fa-tree', bg: '#16A34A', shadow: 'rgba(22, 163, 74, 0.55)' },
+        DRACPN: { icon: 'fa-recycle', bg: '#059669', shadow: 'rgba(5, 150, 105, 0.55)' },
+        DRA: { icon: 'fa-wheat-awn', bg: '#D97706', shadow: 'rgba(217, 119, 6, 0.55)' },
+        OTHER: { icon: 'fa-building', bg: '#475569', shadow: 'rgba(71, 85, 105, 0.55)' }
+    };
+    const c = config[type] || config.OTHER;
+    return L.divIcon({
+        html: `<div style="width:28px;height:28px;background:${c.bg};border-radius:50%;border:2.5px solid #FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px ${c.shadow};color:white;font-size:11px;transition:transform .2s ease;cursor:pointer;">
+                 <i class="fas ${c.icon}"></i>
+               </div>`,
+        iconSize: [28, 28],
+        className: 'directorate-marker-container'
+    });
+}
+
+function adminRegionIcon(r) {
+    const num = r.region_number !== null && r.region_number !== undefined ? (r.region_number === 0 ? 'BKO' : 'R' + String(r.region_number).padStart(2, '0')) : 'R';
+    return L.divIcon({
+        html: `<div style="display:flex;align-items:center;gap:4px;background:#1E1B4B;color:#FFFFFF;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;border:1.5px solid #818CF8;box-shadow:0 2px 8px rgba(30,27,75,0.4);white-space:nowrap;cursor:pointer;">
+                 <span style="background:#4F46E5;padding:1px 4px;border-radius:6px;font-size:9px;">${num}</span>
+                 <span>${r.name}</span>
+               </div>`,
+        iconSize: [110, 24],
+        className: 'admin-region-marker-container'
+    });
+}
+
 // ── AI DIAGNOSIS GENERATOR (GPT-OSS INTEGRATION) ──
 function getAIDiagnosisText(type, data) {
     if (type === 'station') {
@@ -431,6 +469,11 @@ function hydroStationPopup(s) {
                 <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 mb-2">${forecastRows}</div>
             ` : ''}
 
+            <!-- CTA CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal(null, '${s.region || ''}')" class="w-full mt-2 mb-2 py-1.5 px-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
+
             <div class="text-[9px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
                 <span><i class="fas fa-satellite"></i> Copernicus CEMS-GloFAS</span>
                 <span class="font-medium text-blue-600">ID: ${s.id}</span>
@@ -472,6 +515,11 @@ function fieldReportPopup(p) {
                 <div class="flex justify-between"><span class="text-slate-500">Date:</span><span>${p.created_at_display || new Date(p.created_at).toLocaleString('fr-FR')}</span></div>
             </div>
 
+            <!-- CTA CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal()" class="w-full mb-2 py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
+
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400">
                 <span><i class="fas fa-location-dot text-emerald-600"></i> Signalement Citoyen</span>
                 ${verifiedBadge}
@@ -504,6 +552,11 @@ function floodPopup(fl) {
                 </div>
                 <p class="text-slate-700 text-[11px] leading-relaxed">${aiNote}</p>
             </div>
+
+            <!-- CTA CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal()" class="w-full mb-2 py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
 
             <div class="text-[9px] text-slate-400 pt-1 border-t border-slate-100"><i class="fas fa-satellite-dish"></i> ${fl.source}</div>
         </div>
@@ -585,6 +638,11 @@ function firePopup(f) {
                 <p class="text-slate-700 text-[11px] leading-relaxed">${aiNote}</p>
             </div>
 
+            <!-- CTA CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal()" class="w-full mb-2 py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
+
             <div class="text-[9px] text-slate-400 pt-1 border-t border-slate-100"><i class="fas fa-satellite-dish"></i> Surveillance thermique temps quasi réel</div>
         </div>
     `;
@@ -606,7 +664,171 @@ function incidentPopup(inc) {
                 <p class="text-slate-700 text-[11px] leading-relaxed">Alerte générée par corrélation croisée. Notification transmise aux services régionaux.</p>
             </div>
 
+            <!-- CTA CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal(${inc.zone_id ? `'${inc.zone_id}'` : 'null'})" class="w-full mb-2 py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
+
             <div class="text-[9px] text-slate-400 pt-1 border-t border-slate-100">${inc.detected_at ? new Date(inc.detected_at).toLocaleDateString('fr-FR') : '—'}</div>
+        </div>
+    `;
+}
+
+function directoratePopup(d) {
+    const badgeColors = {
+        DRPC: 'bg-red-50 text-red-700 border-red-200',
+        DRH: 'bg-sky-50 text-sky-700 border-sky-200',
+        DREF: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        DRACPN: 'bg-teal-50 text-teal-700 border-teal-200',
+        DRA: 'bg-amber-50 text-amber-700 border-amber-200',
+        OTHER: 'bg-slate-50 text-slate-700 border-slate-200'
+    };
+    const badgeClass = badgeColors[d.directorate_type] || badgeColors.OTHER;
+
+    // Active incidents in zones under jurisdiction
+    const activeIncidents = (allData.incidents || []).filter(inc => {
+        return (d.zones_under_jurisdiction || []).some(zName => 
+            inc.title && inc.title.toLowerCase().includes(zName.toLowerCase())
+        );
+    });
+
+    // Zones pill list
+    const zonesList = (d.zones_under_jurisdiction || []).map(z => 
+        `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-medium border border-slate-200">${z}</span>`
+    ).join(' ');
+
+    return `
+        <div class="p-4 bg-white font-sans text-slate-900 min-w-[280px] max-w-[340px]">
+            <!-- Header with Type Badge and Region -->
+            <div class="flex items-start justify-between gap-2 mb-2.5 pb-2.5 border-b border-slate-100">
+                <div>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass} mb-1.5 shadow-2xs">
+                        <i class="${d.icon || 'fas fa-building'}"></i> ${d.type_display || d.directorate_type}
+                    </span>
+                    <h4 class="font-bold text-slate-900 text-sm leading-snug">${d.name}</h4>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1">
+                        <i class="fas fa-location-dot text-red-500 text-[11px]"></i>
+                        <span>Région de <b>${d.region_name || 'Mali'}</b> ${d.capital ? '• Chef-lieu: ' + d.capital : ''}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address and Headquarters -->
+            ${d.address ? `
+            <div class="text-[11px] text-slate-600 mb-3 flex items-start gap-1.5 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                <i class="fas fa-map-pin text-slate-400 text-xs mt-0.5 flex-shrink-0"></i>
+                <span class="leading-relaxed">${d.address}</span>
+            </div>` : ''}
+
+            <!-- Direct Call Action CTAs (One-Click Emergency & Standard Lines) -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <a href="tel:${d.phone_primary}" class="py-2 px-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-center font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm">
+                    <i class="fas fa-phone"></i> Appeler
+                </a>
+                <a href="tel:${d.emergency_number || '122'}" class="py-2 px-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-center font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ring-2 ring-red-300">
+                    <i class="fas fa-phone-volume"></i> Urgence ${d.emergency_number || '122'}
+                </a>
+            </div>
+
+            ${d.phone_secondary ? `
+            <div class="text-[11px] text-slate-600 mb-2 flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
+                <span class="text-slate-500 text-[10px]">Ligne d'astreinte :</span>
+                <a href="tel:${d.phone_secondary}" class="font-semibold text-slate-800 hover:text-blue-600 flex items-center gap-1">
+                    <i class="fas fa-phone-flip text-[9px] text-slate-400"></i> ${d.phone_secondary}
+                </a>
+            </div>` : ''}
+
+            ${d.email ? `
+            <div class="text-[11px] text-slate-600 mb-2.5 flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
+                <span class="text-slate-500 text-[10px]">Courriel officiel :</span>
+                <a href="mailto:${d.email}" class="font-medium text-blue-600 truncate max-w-[170px] hover:underline flex items-center gap-1">
+                    <i class="fas fa-envelope text-[9px] text-slate-400"></i> ${d.email}
+                </a>
+            </div>` : ''}
+
+            <!-- Active Alerts in Sector -->
+            ${activeIncidents.length > 0 ? `
+            <div class="mb-2.5 p-2 bg-red-50/80 rounded-xl border border-red-200 text-xs">
+                <div class="font-bold text-red-900 mb-1 text-[11px] flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i class="fas fa-triangle-exclamation text-red-600"></i> Alertes actives sous juridiction</span>
+                    <span class="px-1.5 py-0.5 rounded bg-red-200 text-red-800 text-[9px] font-bold">${activeIncidents.length}</span>
+                </div>
+                <div class="space-y-1 mt-1">
+                    ${activeIncidents.slice(0, 2).map(inc => `
+                        <div class="text-[10px] text-red-800 flex items-center justify-between">
+                            <span class="truncate max-w-[200px]">• ${inc.title}</span>
+                            <span class="font-bold text-[9px] uppercase">${inc.severity}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- Zones under jurisdiction -->
+            <div class="pt-2 border-t border-slate-100">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center justify-between">
+                    <span>Secteurs &amp; Zones de Surveillance</span>
+                    <span class="text-blue-700 font-bold">${(d.zones_under_jurisdiction || []).length} zones</span>
+                </div>
+                <div class="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                    ${zonesList || '<span class="text-[10px] text-slate-400 italic">Région entière sous surveillance</span>'}
+                </div>
+            </div>
+
+            <!-- Notes -->
+            ${d.notes ? `
+            <div class="mt-2.5 p-2 bg-slate-50 rounded-lg text-[10px] text-slate-600 border border-slate-200/80 leading-relaxed">
+                <i class="fas fa-info-circle text-blue-500 mr-1"></i> ${d.notes}
+            </div>` : ''}
+        </div>
+    `;
+}
+
+function adminRegionPopup(r) {
+    const num = r.region_number !== null && r.region_number !== undefined 
+        ? (r.region_number === 0 ? 'District Spécial' : 'Région N° ' + String(r.region_number).padStart(2, '0')) 
+        : 'Région Administrative';
+
+    return `
+        <div class="p-4 bg-white font-sans text-slate-900 min-w-[270px] max-w-[320px]">
+            <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
+                <div>
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${num}</span>
+                    <h4 class="font-bold text-slate-900 text-sm mt-1">${r.name}</h4>
+                </div>
+                <span class="text-xs font-mono font-bold text-slate-400 px-1.5 py-0.5 bg-slate-50 rounded border border-slate-200">${r.code}</span>
+            </div>
+
+            <div class="space-y-1.5 text-xs text-slate-600 mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Chef-lieu :</span>
+                    <b class="text-slate-800">${r.capital || '—'}</b>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Population :</span>
+                    <b class="text-slate-800">${r.population ? Number(r.population).toLocaleString('fr-FR') + ' hab.' : '—'}</b>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Superficie :</span>
+                    <b class="text-slate-800">${r.area_km2 ? Number(r.area_km2).toLocaleString('fr-FR') + ' km²' : '—'}</b>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Directions régionales :</span>
+                    <b class="text-red-600 font-bold">${r.directorates_count || 0} services</b>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Zones de surveillance :</span>
+                    <b class="text-blue-600 font-bold">${r.zones_count || 0} zones</b>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="filterDirectoratesByRegion('${r.code}')" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
+                    <i class="fas fa-shield-halved"></i> Voir les services
+                </button>
+                <a href="tel:122" class="py-1.5 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1" title="Urgence Protection Civile">
+                    <i class="fas fa-phone-volume"></i> 122
+                </a>
+            </div>
         </div>
     `;
 }
@@ -622,12 +844,14 @@ function loadMapData() {
                 floods: (d.floods || []).length,
                 fires: (d.fires || []).length,
                 incidents: (d.incidents || []).length,
-                reports: (d.reports || []).length
+                reports: (d.reports || []).length,
+                directorates: (d.directorates || []).length,
+                admin_regions: (d.admin_regions || []).length
             };
 
             const statusEl = document.getElementById('map-status');
             if (statusEl) {
-                statusEl.textContent = `${counts.hydrology} stations GloFAS | ${counts.reports} signalements terrain | Réseau hydrographique Mali`;
+                statusEl.textContent = `${counts.directorates} Directions Régionales | ${counts.admin_regions} Régions 2023 | ${counts.hydrology} stations GloFAS`;
             }
 
             const updateEl = document.getElementById('last-update');
@@ -786,6 +1010,134 @@ function buildLayers() {
         m.addTo(grps.incidents);
     });
     if (vis.incidents) grps.incidents.addTo(map);
+
+    // 7. Directions Régionales (ACTIVE PAR DÉFAUT)
+    rebuildDirectoratesLayer();
+
+    // 8. 19 Régions Administratives 2023 (OFF PAR DÉFAUT)
+    rebuildAdminRegionsLayer();
+}
+
+function rebuildDirectoratesLayer() {
+    if (grps.directorates) map.removeLayer(grps.directorates);
+    grps.directorates = L.layerGroup();
+
+    const filtered = (allData.directorates || []).filter(d => activeDirectorateSubtypes.has(d.directorate_type));
+    filtered.forEach(d => {
+        if (!d.latitude || !d.longitude) return;
+        const m = L.marker([d.latitude, d.longitude], { icon: directorateIcon(d.directorate_type) });
+        m._data = { ...d, _layer: 'directorates' };
+        m.bindPopup(directoratePopup(d), { maxWidth: 350, className: 'clean-white-popup' });
+        m.on('click', function(e) {
+            if (window.innerWidth < 1024) {
+                this.closePopup();
+                map.closePopup();
+                openBottomSheet('directorate', d);
+            }
+        });
+        m.addTo(grps.directorates);
+    });
+
+    if (vis.directorates) grps.directorates.addTo(map);
+
+    const badge = document.getElementById('directorates-count-badge');
+    if (badge) badge.textContent = `${filtered.length} services`;
+}
+
+function rebuildAdminRegionsLayer() {
+    if (grps.adminRegions) map.removeLayer(grps.adminRegions);
+    grps.adminRegions = L.layerGroup();
+
+    (allData.admin_regions || []).forEach(r => {
+        if (!r.latitude || !r.longitude) return;
+        const m = L.marker([r.latitude, r.longitude], { icon: adminRegionIcon(r) });
+        m._data = { ...r, _layer: 'adminRegions' };
+        m.bindPopup(adminRegionPopup(r), { maxWidth: 330, className: 'clean-white-popup' });
+        m.on('click', function(e) {
+            if (window.innerWidth < 1024) {
+                this.closePopup();
+                map.closePopup();
+                openBottomSheet('adminRegion', r);
+            }
+        });
+        m.addTo(grps.adminRegions);
+    });
+
+    if (vis.adminRegions) grps.adminRegions.addTo(map);
+}
+
+function toggleDirectorateSubtype(subtype) {
+    if (activeDirectorateSubtypes.has(subtype)) {
+        activeDirectorateSubtypes.delete(subtype);
+    } else {
+        activeDirectorateSubtypes.add(subtype);
+    }
+    rebuildDirectoratesLayer();
+}
+
+function filterDirectoratesByRegion(regionCode) {
+    if (!vis.directorates) {
+        toggleLayer('directorates');
+    }
+    const r = (allData.admin_regions || []).find(reg => reg.code === regionCode);
+    if (r && r.latitude && r.longitude) {
+        map.flyTo([r.latitude, r.longitude], 10, { animate: true, duration: 1.2 });
+    }
+}
+
+function filterZonesByName(query) {
+    if (!query) return;
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return;
+
+    // Search in directorates
+    const foundDir = (allData.directorates || []).find(d => 
+        (d.name && d.name.toLowerCase().includes(q)) ||
+        (d.region_name && d.region_name.toLowerCase().includes(q)) ||
+        (d.capital && d.capital.toLowerCase().includes(q))
+    );
+    if (foundDir && foundDir.latitude && foundDir.longitude) {
+        if (!vis.directorates) toggleLayer('directorates');
+        map.flyTo([foundDir.latitude, foundDir.longitude], 13, { animate: true });
+        return;
+    }
+
+    // Search in admin regions
+    const foundReg = (allData.admin_regions || []).find(r => 
+        (r.name && r.name.toLowerCase().includes(q)) ||
+        (r.capital && r.capital.toLowerCase().includes(q))
+    );
+    if (foundReg && foundReg.latitude && foundReg.longitude) {
+        map.flyTo([foundReg.latitude, foundReg.longitude], 10, { animate: true });
+        return;
+    }
+
+    // Search in hydro stations
+    const foundHydro = (allData.hydrology || []).find(s => 
+        (s.nom_station && s.nom_station.toLowerCase().includes(q)) ||
+        (s.cours_d_eau && s.cours_d_eau.toLowerCase().includes(q)) ||
+        (s.bassin && s.bassin.toLowerCase().includes(q))
+    );
+    if (foundHydro && (foundHydro.latitude_river || foundHydro.latitude)) {
+        map.flyTo([foundHydro.latitude_river || foundHydro.latitude, foundHydro.longitude_river || foundHydro.longitude], 12, { animate: true });
+        return;
+    }
+
+    // Search in zones
+    const foundZone = (allData.zones || []).find(z => z.name && z.name.toLowerCase().includes(q));
+    if (foundZone && foundZone.latitude && foundZone.longitude) {
+        map.flyTo([foundZone.latitude, foundZone.longitude], 11, { animate: true });
+    }
+}
+
+function resetFilters() {
+    activeDirectorateSubtypes = new Set(['DRPC', 'DRH', 'DREF', 'DRACPN', 'DRA', 'OTHER']);
+    ['drpc', 'drh', 'dref', 'dracpn', 'dra'].forEach(k => {
+        const el = document.getElementById('subfilter-' + k);
+        if (el) el.checked = true;
+    });
+    rebuildDirectoratesLayer();
+    map.setView([14.5, -4.0], 6);
 }
 
 function buildHeatmap() {
@@ -890,6 +1242,20 @@ function toggleLayer(name) {
         } else {
             if (grps.geeForest) map.removeLayer(grps.geeForest);
         }
+    } else if (name === 'directorates') {
+        if (vis.directorates) {
+            if (grps.directorates) map.addLayer(grps.directorates);
+            else rebuildDirectoratesLayer();
+        } else {
+            if (grps.directorates) map.removeLayer(grps.directorates);
+        }
+    } else if (name === 'adminRegions') {
+        if (vis.adminRegions) {
+            if (grps.adminRegions) map.addLayer(grps.adminRegions);
+            else rebuildAdminRegionsLayer();
+        } else {
+            if (grps.adminRegions) map.removeLayer(grps.adminRegions);
+        }
     } else {
         if (vis[name]) { if (grps[name]) map.addLayer(grps[name]); }
         else { if (grps[name]) map.removeLayer(grps[name]); }
@@ -912,6 +1278,8 @@ function openBottomSheet(type, item) {
     else if (type === 'climate') content.innerHTML = climatePopup(item);
     else if (type === 'fire') content.innerHTML = firePopup(item);
     else if (type === 'incident') content.innerHTML = incidentPopup(item);
+    else if (type === 'directorate') content.innerHTML = directoratePopup(item);
+    else if (type === 'adminRegion') content.innerHTML = adminRegionPopup(item);
 
     sheet.classList.add('active');
     const overlay = document.getElementById('panel-overlay');
@@ -950,6 +1318,250 @@ function closeBottomSheet() {
     if (sheet) sheet.classList.remove('active');
     const overlay = document.getElementById('panel-overlay');
     if (overlay) overlay.classList.remove('active');
+}
+
+// ── CONTACT STRUCTURES MODAL LOGIC ──
+let currentModalTypeFilter = 'ALL';
+let modalCustomDirectoratesList = null;
+
+function openContactStructuresModal(zoneId, regionCode) {
+    const modal = document.getElementById('contact-structures-modal');
+    if (!modal) return;
+
+    modal.classList.add('active');
+
+    // Populate region select if needed
+    const regionSelect = document.getElementById('modal-dir-region-select');
+    if (regionSelect && regionSelect.options.length <= 1 && allData.admin_regions) {
+        allData.admin_regions.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.code;
+            opt.textContent = `${r.code} - Région de ${r.name} (${r.capital || ''})`;
+            regionSelect.appendChild(opt);
+        });
+    }
+
+    // Reset filters
+    const searchInput = document.getElementById('modal-dir-search');
+    if (searchInput) searchInput.value = '';
+    setModalTypeFilter('ALL', false);
+
+    if (zoneId) {
+        const container = document.getElementById('modal-directorates-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-slate-500">
+                    <i class="fas fa-spinner fa-spin text-xl text-red-600 mb-2"></i>
+                    <p class="text-xs">Chargement des structures compétentes pour la zone...</p>
+                </div>
+            `;
+        }
+        fetch(`/api/geography/directorates/by-zone/${zoneId}/`)
+            .then(r => r.json())
+            .then(data => {
+                modalCustomDirectoratesList = data.competent_directorates || [];
+                const zoneName = data.zone ? data.zone.name : '';
+                renderModalDirectorates(modalCustomDirectoratesList, `Structures compétentes pour la zone <b>${zoneName}</b>`);
+            })
+            .catch(err => {
+                console.error('Erreur chargement structures zone:', err);
+                modalCustomDirectoratesList = null;
+                filterModalDirectorates();
+            });
+    } else {
+        modalCustomDirectoratesList = null;
+        if (regionCode && regionSelect) {
+            regionSelect.value = regionCode;
+        }
+        filterModalDirectorates();
+    }
+}
+
+function closeContactStructuresModal() {
+    const modal = document.getElementById('contact-structures-modal');
+    if (modal) modal.classList.remove('active');
+    modalCustomDirectoratesList = null;
+}
+
+function setModalTypeFilter(type, shouldFilter = true) {
+    currentModalTypeFilter = type;
+    document.querySelectorAll('.modal-type-btn').forEach(btn => {
+        const btnType = btn.dataset.type;
+        if (btnType === type) {
+            btn.className = 'modal-type-btn px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-800 text-white whitespace-nowrap shadow-xs';
+        } else {
+            btn.className = 'modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 whitespace-nowrap';
+        }
+    });
+    if (shouldFilter) {
+        filterModalDirectorates();
+    }
+}
+
+function filterModalDirectorates() {
+    const sourceList = modalCustomDirectoratesList || allData.directorates || [];
+    const searchVal = (document.getElementById('modal-dir-search')?.value || '').toLowerCase().trim();
+    const regionVal = document.getElementById('modal-dir-region-select')?.value || '';
+
+    const filtered = sourceList.filter(d => {
+        if (currentModalTypeFilter !== 'ALL' && d.directorate_type !== currentModalTypeFilter) {
+            return false;
+        }
+        if (regionVal) {
+            const dRegCode = d.region_code || (d.region && d.region.code) || '';
+            const dRegName = d.region_name || (d.region && d.region.name) || '';
+            if (dRegCode !== regionVal && !dRegName.toLowerCase().includes(regionVal.toLowerCase())) {
+                return false;
+            }
+        }
+        if (searchVal) {
+            const matchName = (d.name || '').toLowerCase().includes(searchVal);
+            const matchCity = (d.capital || d.address || '').toLowerCase().includes(searchVal);
+            const matchPhone = (d.phone_primary || d.emergency_number || '').includes(searchVal);
+            const matchRegion = (d.region_name || (d.region && d.region.name) || '').toLowerCase().includes(searchVal);
+            if (!matchName && !matchCity && !matchPhone && !matchRegion) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    renderModalDirectorates(filtered);
+}
+
+function renderModalDirectorates(list, headerNotice) {
+    const container = document.getElementById('modal-directorates-container');
+    const counter = document.getElementById('modal-dir-counter');
+    if (!container) return;
+
+    if (counter) {
+        counter.textContent = `${list.length} structure${list.length > 1 ? 's' : ''} disponible${list.length > 1 ? 's' : ''}`;
+    }
+
+    if (!list || list.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <i class="fas fa-building-circle-exclamation text-slate-400 text-3xl mb-2"></i>
+                <div class="font-bold text-slate-700 text-sm">Aucune direction trouvée</div>
+                <p class="text-xs text-slate-500 mt-1">Modifiez vos critères de recherche ou sélectionnez une autre région.</p>
+                <div class="mt-4">
+                    <a href="tel:122" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md">
+                        <i class="fas fa-phone-volume"></i> Appeler l'Urgence Nationale (122)
+                    </a>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const badgeColors = {
+        DRPC: 'bg-red-50 text-red-700 border-red-200',
+        DRH: 'bg-sky-50 text-sky-700 border-sky-200',
+        DREF: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        DRACPN: 'bg-teal-50 text-teal-700 border-teal-200',
+        DRA: 'bg-amber-50 text-amber-700 border-amber-200',
+        OTHER: 'bg-slate-50 text-slate-700 border-slate-200'
+    };
+
+    let html = '';
+    if (headerNotice) {
+        html += `
+            <div class="p-2.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fas fa-circle-info text-blue-600"></i> ${headerNotice}</span>
+                <button onclick="openContactStructuresModal()" class="text-blue-700 font-bold hover:underline text-[11px]">Voir tout le Mali</button>
+            </div>
+        `;
+    }
+
+    list.forEach(d => {
+        const typeBadge = badgeColors[d.directorate_type] || badgeColors.OTHER;
+        const regName = d.region_name || (d.region && d.region.name) || 'Mali';
+        const capital = d.capital || (d.region && d.region.capital) || '';
+        const hasCoords = d.latitude && d.longitude;
+
+        html += `
+            <div class="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${typeBadge}">
+                                <i class="${d.icon || 'fas fa-building'} mr-1"></i>${d.type_display || d.directorate_type}
+                            </span>
+                            <span class="text-[11px] font-semibold text-slate-600 flex items-center gap-1">
+                                <i class="fas fa-location-dot text-red-500 text-[10px]"></i>
+                                <span>Région de <b>${regName}</b> ${capital ? '• ' + capital : ''}</span>
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm leading-snug">${d.name}</h4>
+                        ${d.address ? `<div class="text-[11px] text-slate-500 mt-0.5"><i class="fas fa-map-pin mr-1 text-slate-400"></i>${d.address}</div>` : ''}
+                    </div>
+
+                    <!-- CTA Buttons -->
+                    <div class="flex items-center gap-1.5 shrink-0 mt-1 sm:mt-0 flex-wrap">
+                        ${d.phone_primary ? `
+                            <a href="tel:${d.phone_primary}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs transition-colors" title="Appeler directement">
+                                <i class="fas fa-phone"></i> ${d.phone_primary}
+                            </a>
+                        ` : ''}
+                        <a href="tel:${d.emergency_number || '122'}" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs ring-1 ring-red-300 transition-colors" title="Ligne d'urgence">
+                            <i class="fas fa-phone-volume"></i> ${d.emergency_number || '122'}
+                        </a>
+                        ${d.phone_primary ? `
+                            <button onclick="dispatchAlertWhatsApp('${d.phone_primary}', '${d.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs flex items-center gap-1 shadow-xs transition-colors" title="Envoyer une alerte WhatsApp">
+                                <i class="fab fa-whatsapp text-sm"></i>
+                            </button>
+                        ` : ''}
+                        ${hasCoords ? `
+                            <button onclick="locateDirectorateOnMap(${d.latitude}, ${d.longitude}, ${d.id})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs flex items-center gap-1 transition-colors" title="Localiser sur la carte">
+                                <i class="fas fa-location-crosshairs text-blue-600"></i> Carte
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                    <div class="flex items-center gap-3">
+                        ${d.email ? `<a href="mailto:${d.email}" class="text-blue-600 hover:underline flex items-center gap-1"><i class="fas fa-envelope text-slate-400"></i> ${d.email}</a>` : ''}
+                        ${d.phone_secondary ? `<span class="flex items-center gap-1"><i class="fas fa-phone-flip text-slate-400"></i> Astreinte: ${d.phone_secondary}</span>` : ''}
+                    </div>
+                    <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Service actif</span>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function locateDirectorateOnMap(lat, lon, dirId) {
+    closeContactStructuresModal();
+    if (!vis.directorates) {
+        vis.directorates = true;
+        const cb = document.getElementById('layer-directorates');
+        if (cb) cb.checked = true;
+        if (grps.directorates) map.addLayer(grps.directorates);
+        else rebuildDirectoratesLayer();
+    }
+
+    if (map) {
+        map.flyTo([lat, lon], 12, { animate: true, duration: 1 });
+        setTimeout(() => {
+            if (grps.directorates) {
+                grps.directorates.eachLayer(layer => {
+                    if (layer._data && layer._data.id === dirId) {
+                        layer.openPopup();
+                    }
+                });
+            }
+        }, 1100);
+    }
+}
+
+function dispatchAlertWhatsApp(phone, dirName) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const internationalPhone = cleanPhone.startsWith('223') ? cleanPhone : `223${cleanPhone}`;
+    const text = encodeURIComponent(`🚨 [URGENCE ECO-SURVEILLANCE MALI]\nBonjour,\nUne alerte environnementale urgente nécessite votre intervention :\n- Structure : ${dirName}\n- Plateforme : ECO-SURVEILLANCE MALI\nMerci de prendre contact avec les équipes de surveillance.`);
+    window.open(`https://api.whatsapp.com/send?phone=${internationalPhone}&text=${text}`, '_blank');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -4,8 +4,13 @@
 <div class="flex items-center justify-between mb-8">
     <div>
         <h1 class="text-2xl font-display font-bold"><i class="fas fa-fire text-risk-critical mr-2"></i>Detections de Feux</h1>
-        <p class="text-sm text-ink-muted mt-1">Donnees NASA FIRMS</p>
+        <p class="text-sm text-ink-muted mt-1">Donnees NASA FIRMS &amp; Services de Lutte (DREF / Protection Civile)</p>
     </div>
+    <a href="{% url 'core:map' %}?action=contact" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-sm transition-all flex items-center gap-2 ring-2 ring-red-200">
+        <i class="fas fa-phone-volume"></i>
+        <span>Contacter les structures</span>
+        <span class="px-1.5 py-0.2 bg-red-800 text-white rounded text-[10px] font-black">122</span>
+    </a>
 </div>
 <div class="bg-surface-card rounded-xl border border-surface-border shadow-card overflow-hidden">
 <table class="w-full text-sm">

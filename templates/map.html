@@ -224,6 +224,13 @@
             <i class="fas fa-location-dot"></i> Signaler
         </button>
 
+        <!-- ACTION BUTTON: CONTACTER LES STRUCTURES (URGENCE 122) -->
+        <button onclick="openContactStructuresModal()" id="btn-contact-structures" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-md transition-all flex items-center gap-2 ring-2 ring-red-300" title="Contacter les directions régionales et services d'urgence (122)">
+            <i class="fas fa-phone-volume text-sm"></i>
+            <span>Contacter les structures</span>
+            <span class="px-1.5 py-0.2 bg-red-800 text-white rounded text-[10px] font-black">122</span>
+        </button>
+
         <!-- ACTION BUTTON: GPS -->
         <button onclick="getUserGeolocation()" id="btn-header-gps" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm transition-colors flex items-center gap-1.5" title="Centrer sur ma position GPS">
             <i class="fas fa-crosshairs"></i> GPS
@@ -252,6 +259,10 @@
     <!-- MOBILE ACTION BUTTONS (FABS) -->
     <button onclick="openPanel('filter')" class="lg:hidden absolute top-3 left-3 z-30 w-10 h-10 bg-white rounded-full shadow-md border border-slate-200 flex items-center justify-center text-blue-600 active:scale-95 transition-transform" title="Couches &amp; Filtres">
         <i class="fas fa-sliders text-sm"></i>
+    </button>
+    <button onclick="openContactStructuresModal()" class="lg:hidden absolute top-3 left-15 z-30 h-10 px-3 bg-red-600 text-white rounded-full shadow-md border border-red-500 flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-transform" title="Contacter les structures (122)">
+        <i class="fas fa-phone-volume"></i>
+        <span>Structures 122</span>
     </button>
     <button onclick="openPanel('stats')" class="lg:hidden absolute top-3 right-3 z-30 w-10 h-10 bg-white rounded-full shadow-md border border-slate-200 flex items-center justify-center text-slate-700 active:scale-95 transition-transform" title="Légende &amp; Statuts">
         <i class="fas fa-circle-info text-sm text-blue-600"></i>
@@ -322,7 +333,76 @@
             </div>
         </div>
 
-        <!-- 2. COUCHES SECONDAIRES À LA DEMANDE (DÉCOCHÉES PAR DÉFAUT) -->
+        <!-- 2. DIRECTIONS RÉGIONALES (LOI 2023) & SECOURS -->
+        <div class="mb-3 p-2.5 bg-red-50/70 rounded-xl border border-red-100">
+            <div class="text-xs font-bold text-red-900 mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><i class="fas fa-shield-halved text-red-600"></i> Directions Régionales</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-red-200/70 text-red-800 font-semibold" id="directorates-count-badge">48 services</span>
+            </div>
+
+            <label class="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-white/70 transition-colors">
+                <span class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-red-200"></span>
+                    <span class="text-xs font-semibold text-slate-900">Afficher les Directions</span>
+                </span>
+                <input type="checkbox" id="layer-directorates" checked onchange="toggleLayer('directorates')" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300">
+            </label>
+
+            <!-- Sous-filtres par spécialité -->
+            <div id="directorates-subfilters" class="mt-2 pt-2 border-t border-red-100/80 space-y-1 pl-1 text-[11px]">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Filtrer par spécialité :</div>
+                <label class="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <i class="fas fa-shield-halved text-red-600 w-3.5 text-center"></i> Protection Civile (DRPC - 122)
+                    </span>
+                    <input type="checkbox" id="subfilter-drpc" checked onchange="toggleDirectorateSubtype('DRPC')" class="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <i class="fas fa-droplet text-sky-600 w-3.5 text-center"></i> Hydraulique (DRH)
+                    </span>
+                    <input type="checkbox" id="subfilter-drh" checked onchange="toggleDirectorateSubtype('DRH')" class="w-3.5 h-3.5 rounded text-sky-600 focus:ring-sky-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <i class="fas fa-tree text-emerald-600 w-3.5 text-center"></i> Eaux &amp; Forêts (DREF)
+                    </span>
+                    <input type="checkbox" id="subfilter-dref" checked onchange="toggleDirectorateSubtype('DREF')" class="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <i class="fas fa-recycle text-teal-600 w-3.5 text-center"></i> Assainissement (DRACPN)
+                    </span>
+                    <input type="checkbox" id="subfilter-dracpn" checked onchange="toggleDirectorateSubtype('DRACPN')" class="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-white/60 transition-colors">
+                    <span class="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <i class="fas fa-wheat-awn text-amber-600 w-3.5 text-center"></i> Agriculture (DRA)
+                    </span>
+                    <input type="checkbox" id="subfilter-dra" checked onchange="toggleDirectorateSubtype('DRA')" class="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300">
+                </label>
+            </div>
+
+            <!-- Régions Administratives 2023 -->
+            <div class="mt-2 pt-2 border-t border-red-100/80">
+                <label class="flex items-center justify-between cursor-pointer p-1 rounded-lg hover:bg-white/70 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                        <span class="text-xs font-semibold text-slate-900">19 Régions &amp; Chefs-lieux</span>
+                    </span>
+                    <input type="checkbox" id="layer-adminRegions" onchange="toggleLayer('adminRegions')" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                </label>
+            </div>
+
+            <!-- ACTION BOUTON : CONTACTER LES STRUCTURES -->
+            <button onclick="openContactStructuresModal()" class="w-full mt-2.5 py-2 px-3 text-xs font-bold rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-sm transition-all flex items-center justify-center gap-2 ring-2 ring-red-200">
+                <i class="fas fa-phone-volume"></i>
+                <span>Contacter les structures</span>
+                <span class="px-1.5 py-0.5 bg-red-800 text-white rounded text-[10px] font-black">122</span>
+            </button>
+        </div>
+
+        <!-- 3. COUCHES SECONDAIRES À LA DEMANDE (DÉCOCHÉES PAR DÉFAUT) -->
         <div class="mb-3">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Couches Secondaires</div>
             <div class="space-y-1">
@@ -416,6 +496,33 @@
             </div>
         </div>
 
+        <!-- DIRECTIONS RÉGIONALES -->
+        <div class="mb-3.5">
+            <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Directions Régionales (Loi 2023)</div>
+            <div class="space-y-1 text-[11px]">
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+                    <span class="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px]"><i class="fas fa-shield-halved"></i></span>
+                    <span class="text-slate-700"><b>DRPC</b> — Protection Civile (Urgence 122)</span>
+                </div>
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+                    <span class="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[9px]"><i class="fas fa-droplet"></i></span>
+                    <span class="text-slate-700"><b>DRH</b> — Hydraulique &amp; Fleuves</span>
+                </div>
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+                    <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]"><i class="fas fa-tree"></i></span>
+                    <span class="text-slate-700"><b>DREF</b> — Eaux &amp; Forêts / Feux</span>
+                </div>
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+                    <span class="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[9px]"><i class="fas fa-recycle"></i></span>
+                    <span class="text-slate-700"><b>DRACPN</b> — Assainissement / Pollutions</span>
+                </div>
+                <div class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+                    <span class="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[9px]"><i class="fas fa-wheat-awn"></i></span>
+                    <span class="text-slate-700"><b>DRA</b> — Agriculture &amp; Décrue</span>
+                </div>
+            </div>
+        </div>
+
         <!-- IA & MODÈLES -->
         <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
             <div class="font-bold text-slate-800 mb-1 flex items-center gap-1.5 text-[11px]">
@@ -448,6 +555,15 @@
             </button>
             <button onclick="toggleLayer('reports')" id="btn-reports" class="layer-pill active-layer-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1.5 whitespace-nowrap">
                 <i class="fas fa-bullhorn text-amber-500"></i> Signalements
+            </button>
+            <button onclick="toggleLayer('directorates')" id="btn-directorates" class="layer-pill active-layer-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-shield-halved text-red-600"></i> Directions (122)
+            </button>
+            <button onclick="openContactStructuresModal()" id="btn-contact-structures-pill" class="layer-pill px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 active:scale-95 flex items-center gap-1.5 whitespace-nowrap shadow-sm ring-2 ring-red-200" title="Ouvrir l'annuaire d'urgence et contacter les structures">
+                <i class="fas fa-phone-volume"></i> Contacter les structures (122)
+            </button>
+            <button onclick="toggleLayer('adminRegions')" id="btn-adminRegions" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-map-location-dot text-indigo-600"></i> Régions 2023
             </button>
             <div class="w-px h-4 bg-slate-200 mx-0.5"></div>
             <button onclick="toggleLayer('climate')" id="btn-climate" class="layer-pill px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 whitespace-nowrap">
@@ -574,6 +690,93 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL ANNUAIRE DES DIRECTIONS RÉGIONALES & URGENCES MALI -->
+<!-- ========================================================================= -->
+<div id="contact-structures-modal" class="custom-modal">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closeContactStructuresModal()"></div>
+    <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col z-20 my-auto max-h-[92vh]">
+        <!-- Header -->
+        <div class="px-5 py-4 bg-gradient-to-r from-red-600 via-red-700 to-rose-800 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg font-bold shadow-inner">
+                    <i class="fas fa-phone-volume"></i>
+                </span>
+                <div>
+                    <h3 class="font-display font-bold text-base text-white">Contacter les Structures Régionales</h3>
+                    <div class="text-[11px] text-red-100 flex items-center gap-2">
+                        <span>19 Régions &amp; District de Bamako</span>
+                        <span>•</span>
+                        <span>Protection Civile (122), DRH, DREF, DRACPN, DRA</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeContactStructuresModal()" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="fas fa-times text-base"></i>
+            </button>
+        </div>
+
+        <!-- Emergency Banner (Hotline 122) -->
+        <div class="p-4 bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 border-b border-red-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center text-base font-black shadow-md shrink-0 animate-pulse">
+                    122
+                </div>
+                <div>
+                    <div class="text-xs font-black text-red-900 uppercase tracking-wide">Numéro Vert National — Protection Civile</div>
+                    <p class="text-[11px] text-red-700">Secours d'urgence, inondations, feux majeurs. Appel gratuit 24h/24 &amp; 7j/7 depuis tout opérateur au Mali.</p>
+                </div>
+            </div>
+            <a href="tel:122" class="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0">
+                <i class="fas fa-phone-volume"></i> Appeler le 122
+            </a>
+        </div>
+
+        <!-- Filter Controls Bar -->
+        <div class="p-3 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <!-- Search -->
+                <div class="relative flex-1">
+                    <input type="text" id="modal-dir-search" placeholder="Rechercher par nom, ville, téléphone..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-all" oninput="filterModalDirectorates()">
+                    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                </div>
+                <!-- Region Select -->
+                <div class="sm:w-56">
+                    <select id="modal-dir-region-select" onchange="filterModalDirectorates()" class="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-medium text-slate-800">
+                        <option value="">Toutes les régions (20)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Type Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="modal-type-pills">
+                <button type="button" onclick="setModalTypeFilter('ALL')" data-type="ALL" class="modal-type-btn px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-800 text-white whitespace-nowrap">Toutes</button>
+                <button type="button" onclick="setModalTypeFilter('DRPC')" data-type="DRPC" class="modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-red-50 whitespace-nowrap"><i class="fas fa-shield-halved text-red-600 mr-1"></i>Protection Civile (DRPC)</button>
+                <button type="button" onclick="setModalTypeFilter('DRH')" data-type="DRH" class="modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-sky-50 whitespace-nowrap"><i class="fas fa-droplet text-sky-600 mr-1"></i>Hydraulique (DRH)</button>
+                <button type="button" onclick="setModalTypeFilter('DREF')" data-type="DREF" class="modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 whitespace-nowrap"><i class="fas fa-tree text-emerald-600 mr-1"></i>Eaux &amp; Forêts (DREF)</button>
+                <button type="button" onclick="setModalTypeFilter('DRACPN')" data-type="DRACPN" class="modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-teal-50 whitespace-nowrap"><i class="fas fa-recycle text-teal-600 mr-1"></i>Assainissement (DRACPN)</button>
+                <button type="button" onclick="setModalTypeFilter('DRA')" data-type="DRA" class="modal-type-btn px-2.5 py-1 rounded-lg font-medium text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-amber-50 whitespace-nowrap"><i class="fas fa-wheat-awn text-amber-600 mr-1"></i>Agriculture (DRA)</button>
+            </div>
+        </div>
+
+        <!-- Cards List Container -->
+        <div id="modal-directorates-container" class="p-4 overflow-y-auto space-y-3 max-h-[50vh] text-xs">
+            <div class="text-center py-8 text-slate-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2 text-red-600"></i>
+                <p>Chargement des structures régionales...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <span id="modal-dir-counter">0 structures affichées</span>
+            <button onclick="closeContactStructuresModal()" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold transition-colors">
+                Fermer
+            </button>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -813,5 +1016,19 @@ function openBottomSheetDirect(htmlContent) {
     sheet.classList.add('active');
     document.getElementById('panel-overlay')?.classList.add('active');
 }
+
+// Auto-open Contact Structures Modal if query param present
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'contact' || params.get('contact') === 'true') {
+        const zoneId = params.get('zone_id');
+        const regionCode = params.get('region');
+        setTimeout(() => {
+            if (typeof openContactStructuresModal === 'function') {
+                openContactStructuresModal(zoneId, regionCode);
+            }
+        }, 500);
+    }
+});
 </script>
 {% endblock %}

@@ -13,6 +13,11 @@
         <p class="text-sm text-ink-muted"><i class="fas fa-map-marker-alt mr-1 text-territory-600"></i>{{ zone.get_zone_type_display }} — {{ zone.region|default:"Sans region" }}</p>
     </div>
     <div class="flex items-center gap-4">
+        <a href="{% url 'core:map' %}?action=contact&zone_id={{ zone.id }}" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-sm transition-all flex items-center gap-2 ring-2 ring-red-200">
+            <i class="fas fa-phone-volume"></i>
+            <span>Contacter les structures</span>
+            <span class="px-1.5 py-0.2 bg-red-800 text-white rounded text-[10px] font-black">122</span>
+        </a>
         <div class="text-right">
             <div class="text-4xl font-display font-bold {% if zone.current_iez >= 85 %}text-risk-normal{% elif zone.current_iez >= 65 %}text-risk-vigil{% elif zone.current_iez >= 40 %}text-risk-high{% else %}text-risk-critical{% endif %}">{{ zone.current_iez }}</div>
             <div class="text-xs text-ink-muted font-medium">IEZ Score</div>
@@ -173,6 +178,61 @@
         <div id="zone-fires" class="space-y-2 max-h-48 overflow-y-auto">
             <p class="text-ink-muted text-sm text-center py-4">Chargement...</p>
         </div>
+    </div>
+</div>
+
+<!-- DIRECTIONS RÉGIONALES COMPÉTENTES & CONTACTS D'URGENCE (122) -->
+<div class="bg-surface-card rounded-xl border border-surface-border shadow-card p-5 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <div class="w-1.5 h-6 rounded-full bg-red-600"></div>
+            <h2 class="font-display font-semibold text-sm">Directions Régionales Compétentes (Loi 2023) &amp; Contacts d'Urgence</h2>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="tel:122" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm ring-2 ring-red-200">
+                <i class="fas fa-phone-volume"></i> Urgence 122
+            </a>
+            <a href="{% url 'core:map' %}?action=contact&zone_id={{ zone.id }}" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1">
+                <i class="fas fa-address-book"></i> Annuaire complet
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {% for d in zone.get_competent_directorates %}
+        <div class="p-3 bg-surface-soft rounded-xl border border-surface-border flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border {% if d.directorate_type == 'DRPC' %}bg-red-50 text-red-700 border-red-200{% elif d.directorate_type == 'DRH' %}bg-sky-50 text-sky-700 border-sky-200{% elif d.directorate_type == 'DREF' %}bg-emerald-50 text-emerald-700 border-emerald-200{% elif d.directorate_type == 'DRACPN' %}bg-teal-50 text-teal-700 border-teal-200{% elif d.directorate_type == 'DRA' %}bg-amber-50 text-amber-700 border-amber-200{% else %}bg-slate-50 text-slate-700 border-slate-200{% endif %}">
+                        <i class="{{ d.icon_class }} mr-1"></i>{{ d.get_directorate_type_display }}
+                    </span>
+                    <span class="text-[10px] text-ink-muted">{{ d.region.name }}</span>
+                </div>
+                <div class="font-bold text-xs text-ink mb-1">{{ d.name }}</div>
+                {% if d.address %}<div class="text-[11px] text-ink-muted mb-2"><i class="fas fa-map-pin mr-1"></i>{{ d.address }}</div>{% endif %}
+            </div>
+
+            <div class="flex items-center gap-2 pt-2 border-t border-surface-border mt-2 flex-wrap">
+                {% if d.phone_primary %}
+                <a href="tel:{{ d.phone_primary }}" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1">
+                    <i class="fas fa-phone"></i> {{ d.phone_primary }}
+                </a>
+                {% endif %}
+                <a href="tel:{{ d.emergency_number|default:'122' }}" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1 ring-1 ring-red-300">
+                    <i class="fas fa-phone-volume"></i> 122
+                </a>
+                {% if d.latitude and d.longitude %}
+                <a href="{% url 'core:map' %}?action=contact&zone_id={{ zone.id }}" class="ml-auto text-xs text-blue-600 hover:underline">
+                    Carte &rarr;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 py-4 text-center text-ink-muted text-xs">
+            Aucune structure spécifique rattachée. Contactez le numéro vert national de la Protection Civile : <b>122</b>.
+        </div>
+        {% endfor %}
     </div>
 </div>
 

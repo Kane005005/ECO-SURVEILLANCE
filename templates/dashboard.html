@@ -34,6 +34,11 @@
         <p class="text-xs sm:text-sm text-slate-500 mt-1">Supervision géospatiale intégrée du Mali — Hydrologie, Climat, Incendies &amp; Écologie</p>
     </div>
     <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
+        <a href="{% url 'core:map' %}?action=contact" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-sm transition-all flex items-center gap-2 ring-2 ring-red-200">
+            <i class="fas fa-phone-volume"></i>
+            <span>Contacter les structures</span>
+            <span class="px-1.5 py-0.2 bg-red-800 text-white rounded text-[10px] font-black">122</span>
+        </a>
         <button onclick="openCopilotModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition-all flex items-center gap-1.5">
             <i class="fas fa-robot"></i> Copilote IA GPT-OSS
         </button>

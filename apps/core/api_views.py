@@ -373,6 +373,50 @@ def map_api(request):
         ).order_by("-created_at")[:100]
     ]
 
+    # Regional Directorates & 2023 Administrative Regions
+    from apps.geography.models import RegionalDirectorate, Region
+    directorates_data = []
+    for d in RegionalDirectorate.objects.filter(is_active=True).select_related("region"):
+        zones_names = list(d.region.zones.values_list("name", flat=True))
+        directorates_data.append({
+            "id": d.id,
+            "name": d.name,
+            "directorate_type": d.directorate_type,
+            "type_display": d.get_directorate_type_display(),
+            "icon": d.icon_class,
+            "badge_color": d.badge_color,
+            "region_id": d.region.id,
+            "region_name": d.region.name,
+            "region_code": d.region.code,
+            "capital": d.region.capital,
+            "address": d.address,
+            "latitude": d.latitude,
+            "longitude": d.longitude,
+            "phone_primary": d.phone_primary,
+            "phone_secondary": d.phone_secondary,
+            "emergency_number": d.emergency_number or "122",
+            "email": d.email,
+            "notes": d.notes,
+            "zones_under_jurisdiction": zones_names,
+            "zones_count": len(zones_names),
+        })
+
+    admin_regions_data = []
+    for r in Region.objects.all().order_by("region_number", "name"):
+        admin_regions_data.append({
+            "id": r.id,
+            "name": r.name,
+            "code": r.code,
+            "region_number": r.region_number,
+            "capital": r.capital,
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "area_km2": r.area_km2,
+            "population": r.population,
+            "zones_count": r.zones.count(),
+            "directorates_count": r.directorates.count(),
+        })
+
     return JsonResponse({
         "zones": zones,
         "fires": fires,
@@ -387,6 +431,8 @@ def map_api(request):
         "climate_summary": climate_summary,
         "eco_alerts": eco_alerts,
         "reports": field_reports,
+        "directorates": directorates_data,
+        "admin_regions": admin_regions_data,
     })
 
 
