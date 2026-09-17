@@ -11,6 +11,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("DJANGO_SECRET_KEY", default="django-insecure-change-me-in-production")
 DEBUG = config("DJANGO_DEBUG", default="1", cast=int)
 ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="*", cast=Csv())
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.dev",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok.io",
+    "https://*.ngrok.app",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8001",
+    "http://localhost:8001",
+]
 
 # ── Apps ──────────────────────────────────────────────────
 INSTALLED_APPS = [
